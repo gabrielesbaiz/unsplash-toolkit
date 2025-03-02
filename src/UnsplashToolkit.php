@@ -70,9 +70,9 @@ class UnsplashToolkit extends HttpClient
     /**
      * Returns the HTTP response body as a decoded object.
      *
-     * @return object
+     * @return array
      */
-    public function toJson(): object
+    public function toJson(): array
     {
         $this->buildResponse();
 
