@@ -5,7 +5,7 @@
 
 A lightweight helper package to handle Unsplash photos
 
-Original code from [marksitko/laravel-unsplash]([marksitko/laravel-unsplash](https://github.com/marksitko/laravel-unsplash)
+Original code from [marksitko/laravel-unsplash](https://github.com/marksitko/laravel-unsplash)
 
 ## Features
 
