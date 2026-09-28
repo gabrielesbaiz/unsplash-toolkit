@@ -1,0 +1,11 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - workbench
+    excludePaths:
+        # Laravel Nova is an optional integration and is not a dev dependency,
+        # so its base classes are not available to analyse against.
+        - src/Nova
+    tmpDir: build/phpstan
+    checkModelProperties: true

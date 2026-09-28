@@ -1,32 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateUnsplashablesTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('unsplashables', function (Blueprint $table) {
-            $table->unsignedBigInteger('unsplash_asset_id');
-            $table->unsignedBigInteger('unsplashables_id');
-            $table->string('unsplashables_type');
+        Schema::create('unsplashables', function (Blueprint $table): void {
+            $table->id();
+
+            $table->foreignId('unsplash_asset_id')
+                ->constrained('unsplash_assets')
+                ->cascadeOnDelete();
+
+            // Indexed by morphs(), so detaching no longer scans the table.
+            $table->morphs('unsplashable');
+
+            $table->timestamps();
+
+            $table->unique(['unsplash_asset_id', 'unsplashable_id', 'unsplashable_type'], 'unsplashables_unique');
         });
     }
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('unsplashables');
     }
-}
+};

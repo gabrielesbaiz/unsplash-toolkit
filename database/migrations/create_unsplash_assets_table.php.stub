@@ -1,35 +1,66 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateUnsplashAssetsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('unsplash_assets', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->uuid('unsplash_id');
-            $table->string('name')->unique();
-            $table->string('author');
-            $table->string('author_link');
+        Schema::create('unsplash_assets', function (Blueprint $table): void {
+            $table->id();
+
+            // Unsplash ids are short base62 strings such as "Dwu85P9SOIk", never UUIDs.
+            $table->string('unsplash_id', 32)->unique();
+
+            // A pool is a named set of approved photos, selected from at render time.
+            $table->string('pool')->index();
+            $table->string('status')->default('active')->index();
+
+            // The hotlinked URLs Unsplash returned, with their ixid intact.
+            $table->json('urls');
+            $table->string('download_location', 2048)->nullable();
+            $table->string('html_link', 2048)->nullable();
+
+            $table->unsignedInteger('width')->default(0);
+            $table->unsignedInteger('height')->default(0);
+            $table->string('color', 32)->nullable();
+            $table->string('blurhash', 64)->nullable();
+            $table->text('description')->nullable();
+            $table->text('alt_description')->nullable();
+
+            $table->string('author_name');
+            $table->string('author_username')->nullable();
+            $table->string('author_link', 2048);
+
+            $table->nullableMorphs('curated_by');
+            $table->timestamp('curated_at')->nullable();
+            $table->timestamp('last_verified_at')->nullable();
+
+            // Only populated under the gated local-storage path.
+            $table->string('disk')->nullable();
+            $table->string('path')->nullable();
+            $table->string('mime', 64)->nullable();
+            $table->unsignedBigInteger('size')->nullable();
+
+            $table->json('meta')->nullable();
             $table->timestamps();
+
+            $table->index(['pool', 'status']);
         });
     }
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('unsplash_assets');
     }
-}
+};

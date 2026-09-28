@@ -1,187 +1,332 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Gabrielesbaiz\UnsplashToolkit;
 
-use Exception;
-use Illuminate\Support\Str;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
-use Gabrielesbaiz\UnsplashToolkit\API\UnsplashAPI;
-use Gabrielesbaiz\UnsplashToolkit\Http\HttpClient;
+use Gabrielesbaiz\UnsplashToolkit\Contracts\UnsplashClient;
+use Gabrielesbaiz\UnsplashToolkit\Data\CollectionResource;
+use Gabrielesbaiz\UnsplashToolkit\Data\Photo;
+use Gabrielesbaiz\UnsplashToolkit\Data\PhotoCollection;
+use Gabrielesbaiz\UnsplashToolkit\Data\RateLimit;
+use Gabrielesbaiz\UnsplashToolkit\Data\Stats;
+use Gabrielesbaiz\UnsplashToolkit\Enums\Size;
 use Gabrielesbaiz\UnsplashToolkit\Models\UnsplashAsset;
+use Gabrielesbaiz\UnsplashToolkit\Support\Compliance;
+use Gabrielesbaiz\UnsplashToolkit\Support\Config;
+use Gabrielesbaiz\UnsplashToolkit\Support\Curator;
+use Gabrielesbaiz\UnsplashToolkit\Support\Downloader;
+use Gabrielesbaiz\UnsplashToolkit\Support\Throttle;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
-class UnsplashToolkit extends HttpClient
+/**
+ * The entry point of the package.
+ *
+ * Browsing returns hotlinked photos, curating records which of them an
+ * application has approved, and pools are then read from the local database so
+ * rendering a page costs no Unsplash API requests.
+ */
+final readonly class UnsplashToolkit
 {
-    use UnsplashAPI;
-
     /**
-     * Accepted URL keys from response.
+     * Create a new toolkit instance.
      */
-    const PHOTO_KEYS = [
-        'raw',
-        'full',
-        'regular',
-        'small',
-        'thumb',
-    ];
+    public function __construct(
+        private UnsplashClient $client,
+        private Config $config,
+        private Compliance $compliance,
+        private Curator $curator,
+        private Throttle $throttle,
+    ) {}
 
     /**
-     * Storage disk to store photos.
-     */
-    protected $storage;
-
-    /**
-     * Guzzle response.
-     */
-    protected Response $response;
-
-    /**
-     * Whether to store the asset in the database.
-     */
-    protected bool $storeInDatabase;
-
-    /**
-     * Creates a new instance of UnsplashToolkit.
+     * Search photos.
      *
-     * @return $this
+     * @see https://unsplash.com/documentation#search-photos
      */
-    public function __construct()
+    public function search(?string $term = null): PendingRequest
     {
-        parent::__construct();
+        $request = $this->request('search/photos', 'search');
 
-        $this->initalizeConfiguration();
-
-        return $this;
+        return $term === null ? $request : $request->term($term);
     }
 
     /**
-     * Returns the full HTTP response.
-     *
-     * @return Response
+     * Search collections.
      */
-    public function get(): Response
+    public function searchCollections(?string $term = null): PendingRequest
     {
-        $this->buildResponse();
+        $request = $this->request('search/collections', 'collections');
 
-        return $this->response;
+        return $term === null ? $request : $request->term($term);
     }
 
     /**
-     * Returns the HTTP response body as a decoded object.
-     *
-     * @return array
+     * Search users.
      */
-    public function toJson(): array
+    public function searchUsers(?string $term = null): PendingRequest
     {
-        $this->buildResponse();
+        $request = $this->request('search/users', 'raw');
 
-        return json_decode($this->response->getBody()->getContents());
+        return $term === null ? $request : $request->term($term);
     }
 
     /**
-     * Returns the HTTP response body as an associative array.
-     *
-     * @return array
+     * List photos.
      */
-    public function toArray(): array
+    public function photos(): PendingRequest
     {
-        $this->buildResponse();
-
-        return json_decode($this->response->getBody()->getContents(), true);
+        return $this->request('photos');
     }
 
     /**
-     * Returns the HTTP response body as a collection.
-     *
-     * @return Collection
+     * Get a single photo.
      */
-    public function toCollection(): Collection
+    public function photo(string $id): Photo
     {
-        $this->buildResponse();
+        /** @var array<string, mixed> $payload */
+        $payload = $this->client->get("photos/{$id}");
 
-        return collect(json_decode($this->response->getBody()->getContents(), true));
+        return Photo::fromResponse($payload);
     }
 
     /**
-     * Stores the retrieved photo in the storage.
+     * Get several photos concurrently.
      *
-     * @param string|null $name if no name is provided, a random 24 character name will be generated
-     * @param string      $key  defines the size of the retrieving photo
+     * Fetching by id is the one place a batch is unavoidable, so the requests
+     * are pooled rather than issued one after another.
      *
-     * @return string    the stored photo name
-     * @throws Exception
+     * @param  array<int, string>  $ids
      */
-    public function store(?string $name = null, string $key = 'small'): string
+    public function photosByIds(array $ids): PhotoCollection
     {
-        $response = $this->toArray();
+        $requests = [];
 
-        if (! array_key_exists('urls', $response)) {
-            throw new Exception('Photo cannot be stored. The "urls" key is missing, or you are trying to store multiple photos.');
+        foreach (array_unique($ids) as $id) {
+            $requests[$id] = ['endpoint' => "photos/{$id}"];
         }
 
-        if (! in_array($key, self::PHOTO_KEYS)) {
-            throw new Exception("The provided key \"{$key}\" is an undefined accessor.");
+        $photos = new PhotoCollection;
+
+        foreach ($this->client->pool($requests) as $payload) {
+            if (is_array($payload) && isset($payload['id'])) {
+                /** @var array<string, mixed> $payload */
+                $photos->push(Photo::fromResponse($payload));
+            }
         }
 
-        $name ??= Str::random(24);
-
-        $image = file_get_contents($response['urls'][$key]);
-
-        while ($this->storage->exists("{$name}.jpg")) {
-            $name = Str::random(24);
-        }
-
-        $this->storage->put("{$name}.jpg", $image);
-
-        if ($this->storeInDatabase) {
-            return UnsplashAsset::create([
-                'unsplash_id' => $response['id'],
-                'name' => "{$name}.jpg",
-                'author' => $response['user']['name'],
-                'author_link' => $response['user']['links']['html'],
-            ]);
-        }
-
-        return $name;
+        return $photos;
     }
 
     /**
-     * Builds the HTTP request.
+     * Get random photos.
+     */
+    public function random(): PendingRequest
+    {
+        return $this->request('photos/random');
+    }
+
+    /**
+     * Get a photo's statistics.
+     */
+    public function photoStatistics(string $id): PendingRequest
+    {
+        return $this->request("photos/{$id}/statistics", 'raw');
+    }
+
+    /**
+     * Get a user's profile.
+     */
+    public function user(string $username): PendingRequest
+    {
+        return $this->request("users/{$username}", 'raw');
+    }
+
+    /**
+     * Get a user's photos.
+     */
+    public function userPhotos(string $username): PendingRequest
+    {
+        return $this->request("users/{$username}/photos");
+    }
+
+    /**
+     * Get a user's likes.
+     */
+    public function userLikes(string $username): PendingRequest
+    {
+        return $this->request("users/{$username}/likes");
+    }
+
+    /**
+     * Get a user's collections.
+     */
+    public function userCollections(string $username): PendingRequest
+    {
+        return $this->request("users/{$username}/collections", 'collections');
+    }
+
+    /**
+     * List collections.
+     */
+    public function collections(): PendingRequest
+    {
+        return $this->request('collections', 'collections');
+    }
+
+    /**
+     * Get a single collection.
+     */
+    public function collection(string $id): CollectionResource
+    {
+        /** @var array<string, mixed> $payload */
+        $payload = $this->client->get("collections/{$id}");
+
+        return CollectionResource::fromResponse($payload);
+    }
+
+    /**
+     * Get the photos in a collection.
+     */
+    public function collectionPhotos(string $id): PendingRequest
+    {
+        return $this->request("collections/{$id}/photos");
+    }
+
+    /**
+     * Get Unsplash's total statistics.
+     */
+    public function stats(): Stats
+    {
+        /** @var array<string, mixed> $payload */
+        $payload = $this->client->get('stats/total');
+
+        return Stats::fromResponse($payload);
+    }
+
+    /**
+     * Approve a photo for use and add it to a pool.
      *
-     * @return $this
+     * Reports the download event Unsplash requires, then records the photo's
+     * metadata and hotlinked URLs. No image bytes are transferred.
      */
-    protected function buildResponse(): self
+    public function curate(Photo $photo, ?string $pool = null, ?Model $curatedBy = null): UnsplashAsset
     {
-        $verb = $this->apiCall['verb'] ?? 'get';
-
-        $this->response = $this->client->{$verb}("{$this->apiCall['endpoint']}?{$this->getQuery()}");
-
-        return $this;
+        return $this->curator->curate($photo, $pool, $curatedBy);
     }
 
     /**
-     * Initializes storage.
+     * Approve several explicitly chosen photos.
      *
-     * @return $this
+     * @param  iterable<int, Photo>  $photos
+     * @return Collection<int, UnsplashAsset>
      */
-    private function initalizeConfiguration(): self
+    public function curateMany(iterable $photos, ?string $pool = null, ?Model $curatedBy = null): Collection
     {
-        $this->storage = Storage::disk(config('unsplash.disk', 'local'));
-
-        $this->storeInDatabase = config('unsplash.store_in_database', false);
-
-        return $this;
+        return $this->curator->curateMany($photos, $pool, $curatedBy);
     }
 
     /**
-     * Checks if the accessed property exists as a method.
-     * If exists, calls the method and returns the complete response.
+     * Approve every photo in an Unsplash collection.
+     *
+     * Editors who already curate a collection on unsplash.com can promote it
+     * straight into a local pool.
+     *
+     * @return Collection<int, UnsplashAsset>
      */
-    public function __get(string $param)
+    public function curateCollection(string $collectionId, ?string $pool = null, int $perPage = 30): Collection
     {
-        if (method_exists($this, $param)) {
-            return $this->{$param}()->get();
-        }
+        $photos = $this->collectionPhotos($collectionId)->perPage($perPage)->get();
+
+        /** @var PhotoCollection $photos */
+        return $this->curator->curateMany($photos, $pool);
+    }
+
+    /**
+     * Report a download event for a photo.
+     */
+    public function trackDownload(Photo $photo): void
+    {
+        $this->curator->trackDownload($photo);
+    }
+
+    /**
+     * Re-fetch a curated photo's metadata.
+     */
+    public function refresh(UnsplashAsset $asset): UnsplashAsset
+    {
+        return $this->curator->refresh($asset);
+    }
+
+    /**
+     * Get one random approved photo from a pool.
+     */
+    public function fromPool(?string $pool = null): ?UnsplashAsset
+    {
+        return UnsplashAsset::cachedRandom($pool);
+    }
+
+    /**
+     * Download a photo's bytes to a local disk.
+     *
+     * Hotlinking is the compliant default, so this throws unless Unsplash has
+     * granted written permission and it has been recorded in config.
+     */
+    public function import(Photo $photo, Size $size = Size::Regular, ?string $pool = null): UnsplashAsset
+    {
+        $this->compliance->assertLocalStorageAllowed();
+
+        $asset = $this->curator->curate($photo, $pool);
+
+        return app(Downloader::class)->store($photo, $asset, $size);
+    }
+
+    /**
+     * Get the rate limit Unsplash reported on the most recent response.
+     */
+    public function rateLimit(): ?RateLimit
+    {
+        return $this->client->rateLimit();
+    }
+
+    /**
+     * Get the local throttle.
+     */
+    public function throttle(): Throttle
+    {
+        return $this->throttle;
+    }
+
+    /**
+     * Get the compliance guard.
+     */
+    public function compliance(): Compliance
+    {
+        return $this->compliance;
+    }
+
+    /**
+     * Get the package configuration.
+     */
+    public function config(): Config
+    {
+        return $this->config;
+    }
+
+    /**
+     * Get the underlying API client.
+     */
+    public function client(): UnsplashClient
+    {
+        return $this->client;
+    }
+
+    /**
+     * Start a request against an arbitrary endpoint.
+     */
+    public function request(string $endpoint, string $shape = 'photos'): PendingRequest
+    {
+        return new PendingRequest($this->client, $endpoint, $shape);
     }
 }

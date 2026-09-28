@@ -1,9 +1,10 @@
 {
     "name": "gabrielesbaiz/unsplash-toolkit",
-    "description": "A lightweight helper package to handle Unsplash photos",
+    "description": "A compliance-first Unsplash toolkit for Laravel: hotlinked images, curated photo pools and correct attribution",
     "keywords": [
         "Gabriele Sbaiz",
         "laravel",
+        "unsplash",
         "unsplash-toolkit"
     ],
     "homepage": "https://github.com/gabrielesbaiz/unsplash-toolkit",
@@ -16,19 +17,20 @@
         }
     ],
     "require": {
-        "php": "^7.3,^8.0|^8.1|^8.2|^8.3|^8.4",
-        "guzzlehttp/guzzle": "^7.9",
+        "php": "^8.2|^8.3|^8.4",
         "illuminate/contracts": "^10.0||^11.0||^12.0",
         "spatie/laravel-package-tools": "^1.16"
     },
     "require-dev": {
+        "larastan/larastan": "^2.9||^3.0",
         "laravel/pint": "^1.14",
         "nunomaduro/collision": "^8.1.1||^7.10.0",
         "orchestra/testbench": "^10.0.0||^9.0.0||^8.22.0",
         "pestphp/pest": "^3.0",
         "pestphp/pest-plugin-arch": "^3.0",
         "pestphp/pest-plugin-laravel": "^3.0",
-        "pestphp/pest-plugin-watch": "^3.0"
+        "phpstan/extension-installer": "^1.3",
+        "phpstan/phpstan": "^1.11||^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -63,10 +65,13 @@
                 "Gabrielesbaiz\\UnsplashToolkit\\UnsplashToolkitServiceProvider"
             ],
             "aliases": {
-                "UnsplashToolkit": "Gabrielesbaiz\\UnsplashToolkit\\Facades\\UnsplashToolkit"
+                "Unsplash": "Gabrielesbaiz\\UnsplashToolkit\\Facades\\Unsplash"
             }
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "suggest": {
+        "laravel/nova": "Required to use the bundled Nova curation action (^4.0|^5.0)"
+    }
 }

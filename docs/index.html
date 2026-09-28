@@ -1,0 +1,2078 @@
+<title>UnsplashToolkit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Public+Sans:wght@400;500;600;700;800&display=swap">
+
+<style>
+/* ---- tokens: Lightbox ------------------------------------------- */
+:root{
+  --paper:#ffffff; --ink:#101828; --sub:#475467; --muted:#697586;
+  --rule:#e4e7ec; --wash:#f6f8fa;
+  --accent:#3538cd; --accent-text:#2b2ead; --accent-ink:#ffffff;
+  --display:'Public Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --ok:#067647; --warn:#b54708;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0b1120; --ink:#e8edf7; --sub:#9fb0c9; --muted:#7887a0;
+    --rule:#1d2842; --wash:#121a2c;
+    --accent:#6172f3; --accent-text:#93a0ff; --accent-ink:#060a18;
+    --ok:#47cd89; --warn:#fdb022;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0b1120; --ink:#e8edf7; --sub:#9fb0c9; --muted:#7887a0;
+  --rule:#1d2842; --wash:#121a2c;
+  --accent:#6172f3; --accent-text:#93a0ff; --accent-ink:#060a18;
+  --ok:#47cd89; --warn:#fdb022;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);
+  padding-top:3.5rem;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:3px}
+a{color:var(--accent-text)}
+.mx{max-width:92rem;margin:0 auto;padding-inline:clamp(1.1rem,4vw,3rem)}
+.hidden{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent-text);margin:0 0 .9rem;display:flex;align-items:center;gap:.6rem}
+.eyebrow::before{content:"";width:1.5rem;height:2px;background:var(--accent-text)}
+p{line-height:1.7;color:var(--sub)}
+h1{font-size:2rem;letter-spacing:-.03em;margin:0 0 .6rem;line-height:1.15}
+h2{font-size:1.35rem;letter-spacing:-.02em;margin:0 0 .8rem;line-height:1.2}
+h3{font-size:1rem;margin:1.6rem 0 .5rem;letter-spacing:-.01em}
+mark{background:var(--accent);color:var(--accent-ink);padding:.05em .28em;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone}
+code{font-family:var(--mono);font-size:.88em;background:var(--wash);
+  border:1px solid var(--rule);border-radius:.25rem;padding:.06em .32em}
+pre{margin:0;padding:1rem .95rem;overflow-x:auto;font-family:var(--mono);
+  font-size:.78rem;line-height:1.75;color:var(--ink);background:var(--wash);
+  border:1px solid var(--rule);border-radius:.4rem}
+pre code{background:none;border:0;padding:0;font-size:inherit}
+.k{color:var(--accent-text);font-weight:600}
+.s{color:var(--sub)}
+.c{color:var(--muted);font-style:italic}
+.fn{color:var(--ink);font-weight:700}
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.8,.2,1)}
+.reveal.seen{opacity:1;transform:none}
+.btn{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;font-weight:700;
+  font-size:.9rem;padding:.75rem 1.2rem;border-radius:.45rem;background:var(--accent);
+  color:var(--accent-ink);border:1px solid var(--accent);transition:.16s}
+.btn:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn.ghost:hover{border-color:var(--accent-text);color:var(--accent-text);background:transparent}
+
+/* ---- masthead ---------------------------------------------------- */
+.top{position:fixed;top:0;left:0;right:0;z-index:60;
+  background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule)}
+.top .in{display:flex;align-items:center;gap:.85rem;height:3.5rem}
+.brand{display:inline-flex;align-items:baseline;gap:.5rem;font-weight:800;letter-spacing:-.03em;
+  font-size:1rem;text-decoration:none;white-space:nowrap;color:var(--accent-text)}
+.brand i{font-style:normal;color:var(--ink)}
+.ver{font-family:var(--mono);font-size:.62rem;color:var(--accent-text);
+  background:color-mix(in srgb,var(--accent) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent-text) 40%,transparent);
+  padding:.1rem .45rem;border-radius:999px;white-space:nowrap}
+#nav{display:none;align-items:center;gap:.1rem;margin-left:auto;font-size:.83rem}
+@media(min-width:1080px){#nav{display:flex}}
+#nav a{text-decoration:none;color:var(--sub);padding:.34rem .6rem;border-radius:.35rem;
+  border:1px solid transparent}
+#nav a:hover{color:var(--ink)}
+#nav a[aria-current="page"]{color:var(--accent-text);
+  border-color:color-mix(in srgb,var(--accent-text) 45%,transparent);
+  background:color-mix(in srgb,var(--accent) 8%,transparent)}
+#nav a.sponsor{color:var(--accent-text);font-weight:700}
+.tools{display:flex;align-items:center;gap:.45rem;margin-left:auto}
+@media(min-width:1080px){.tools{margin-left:.6rem}}
+.search{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;font:inherit;
+  font-size:.78rem;color:var(--muted);background:var(--wash);border:1px solid var(--rule);
+  border-radius:999px;padding:.3rem .5rem .3rem .65rem}
+.search:hover{color:var(--ink);border-color:var(--accent-text)}
+.search svg{width:.78rem;height:.78rem;fill:none;stroke:currentColor;stroke-width:1.9}
+.search span{display:none}
+@media(min-width:640px){.search span{display:inline}}
+.search kbd{font-family:var(--mono);font-size:.6rem;border:1px solid var(--rule);
+  border-radius:.22rem;padding:.04rem .28rem}
+.mode{font:inherit;font-size:.76rem;font-weight:700;cursor:pointer;background:var(--ink);
+  color:var(--paper);border:1px solid var(--ink);padding:.34rem .75rem;border-radius:.35rem}
+.mode:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+#progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:var(--accent-text);
+  transition:width .08s linear}
+
+/* ---- command palette --------------------------------------------- */
+.pal[hidden]{display:none}
+.pal{position:fixed;inset:0;z-index:90;display:grid;place-items:start center;
+  padding-top:clamp(3rem,12vh,8rem);background:color-mix(in srgb,var(--ink) 42%,transparent);
+  backdrop-filter:blur(3px)}
+.pal .box{width:min(34rem,92vw);background:var(--paper);border:1px solid var(--rule);
+  border-radius:.6rem;overflow:hidden;box-shadow:0 30px 70px -30px rgba(16,24,40,.55)}
+.pal input{width:100%;border:0;border-bottom:1px solid var(--rule);background:transparent;
+  color:var(--ink);font:inherit;font-size:1rem;padding:1rem 1.1rem;outline:none}
+.pal ul{list-style:none;margin:0;padding:.4rem;max-height:52vh;overflow-y:auto}
+.pal li{display:flex;align-items:baseline;gap:.7rem;padding:.55rem .7rem;cursor:pointer;
+  font-size:.9rem;color:var(--sub);border-radius:.35rem}
+.pal li b{font-weight:600;color:var(--ink)}
+.pal li em{font-style:normal;margin-left:auto;font-family:var(--mono);font-size:.62rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.pal li[aria-selected="true"]{background:var(--wash)}
+.pal li[aria-selected="true"] b{color:var(--accent-text)}
+
+/* ---- docs layout -------------------------------------------------- */
+.docs{display:grid;gap:clamp(1.6rem,3vw,2.8rem);grid-template-columns:1fr;
+  padding-block:clamp(1.8rem,3.5vw,2.8rem)}
+@media(min-width:1000px){.docs{grid-template-columns:15rem minmax(0,1fr)}}
+@media(min-width:1280px){.docs{grid-template-columns:15rem minmax(0,1fr) 14rem}
+  .docs.norail{grid-template-columns:15rem minmax(0,1fr)}}
+@media(min-width:1660px){.docs{grid-template-columns:17rem minmax(0,1fr) 16rem}
+  .docs.norail{grid-template-columns:17rem minmax(0,1fr)}}
+.sidenav,.onthispage{display:none}
+@media(min-width:1000px){.sidenav{display:block;position:sticky;top:5rem;align-self:start;
+  max-height:calc(100vh - 6.5rem);overflow-y:auto}}
+@media(min-width:1280px){.onthispage{display:block;position:sticky;top:5rem;align-self:start;
+  max-height:calc(100vh - 6.5rem);overflow-y:auto}}
+.sidenav h5,.onthispage h5{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin:1.3rem 0 .55rem;font-weight:400}
+.sidenav h5:first-child{margin-top:0}
+.sidenav ul,.onthispage ul{list-style:none;margin:0;padding:0;display:grid;gap:.1rem}
+.sidenav a{display:block;text-decoration:none;color:var(--sub);font-size:.85rem;
+  padding:.3rem .6rem;border-left:2px solid transparent;border-radius:0 .3rem .3rem 0}
+.sidenav a:hover{color:var(--ink);background:var(--wash)}
+.sidenav a[aria-current="page"]{color:var(--accent-text);font-weight:600;
+  border-left-color:var(--accent-text);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.onthispage li{display:flex;gap:.5rem;align-items:baseline}
+.onthispage a{text-decoration:none;color:var(--muted);font-size:.8rem;padding:.22rem 0;
+  line-height:1.4}
+.onthispage a:hover{color:var(--ink)}
+.onthispage a[aria-current="true"]{color:var(--accent-text);font-weight:600}
+.onthispage .n{font-family:var(--mono);font-size:.6rem;color:var(--rule)}
+.body{min-width:0;max-width:68rem}
+/* Tables, code and details use the full column; prose stays near 68 characters
+   so the wider shell does not turn body copy into a long line to track. */
+.body > section > p,
+.body > section > ul,
+.body > section > ol,
+.body > section > h2 + p,
+.lede{max-width:68ch}
+.body > section{padding-block:1.2rem 1.6rem;scroll-margin-top:5rem}
+.body > section + section{border-top:1px solid var(--rule)}
+.lede{font-size:1.02rem;color:var(--sub);line-height:1.7;margin:0 0 1.4rem}
+
+/* ---- shared content bits ------------------------------------------ */
+.scroller{overflow-x:auto;margin-block:1rem}
+table{width:100%;border-collapse:collapse;font-size:.84rem;min-width:30rem}
+th,td{text-align:left;padding:.55rem .65rem;border-bottom:1px solid var(--rule);
+  vertical-align:top;line-height:1.55}
+th{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);font-weight:400;white-space:nowrap}
+td b{color:var(--ink)}
+td.no{color:var(--muted)}
+td code,th code{white-space:nowrap}
+.note{border-left:3px solid var(--accent-text);background:var(--wash);padding:.9rem 1rem;
+  border-radius:0 .4rem .4rem 0;margin-block:1.1rem;font-size:.88rem;line-height:1.7;color:var(--sub)}
+.note b{color:var(--ink)}
+.note.warn{border-left-color:var(--warn)}
+.grid2{display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+.grid3{display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:760px){.grid3{grid-template-columns:repeat(3,1fr)}}
+.card{border:1px solid var(--rule);border-radius:.5rem;padding:1.1rem;background:var(--paper)}
+.card .n{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--accent-text);
+  margin-bottom:.5rem;text-transform:uppercase}
+.card p{margin:0;font-size:.88rem}
+.card h3{margin-top:0}
+details{border:1px solid var(--rule);border-radius:.45rem;margin-block:.6rem;background:var(--paper)}
+details[open]{background:var(--wash)}
+summary{cursor:pointer;padding:.75rem .9rem;font-weight:600;font-size:.9rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--accent-text);margin-right:.6rem}
+details[open] summary::before{content:"−"}
+details .in{padding:0 .9rem .9rem}
+details .in p:first-child{margin-top:0}
+.pill{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
+  text-transform:uppercase;padding:.14rem .45rem;border-radius:999px;border:1px solid currentColor}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)}
+
+/* ---- landing ------------------------------------------------------- */
+/* The logo is a white-and-blue wordmark on a transparent ground, so it sits on
+   its own dark plate rather than vanishing into a light page. */
+.logoPlate{display:inline-block;background:#080d18;border:1px solid #1d2842;
+  border-radius:.85rem;padding:.9rem 1.15rem;margin-bottom:1.5rem;max-width:min(100%,27rem);
+  box-shadow:0 18px 40px -28px rgba(8,13,24,.8)}
+:root[data-theme="dark"] .logoPlate,
+:root:not([data-theme="light"]) .logoPlate{box-shadow:none}
+.logoPlate img{display:block;width:100%;height:auto}
+@media(max-width:700px){.logoPlate{max-width:min(100%,21rem);padding:.7rem .85rem}}
+.hero{padding-block:clamp(2.4rem,6vw,4.2rem) clamp(2rem,4vw,3rem)}
+.heroGrid{display:grid;gap:clamp(2rem,4vw,3.2rem);align-items:center;grid-template-columns:1fr}
+@media(min-width:960px){.heroGrid{grid-template-columns:minmax(0,1fr) minmax(0,1.02fr)}}
+.hero h1{font-size:clamp(2.3rem,5.2vw,4.2rem);letter-spacing:-.04em;line-height:1.02;
+  margin-bottom:1rem;font-weight:800}
+.hero .sell{font-size:clamp(1rem,1.5vw,1.14rem);max-width:38rem}
+.hero .cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.7rem}
+.hero .facts{display:flex;flex-wrap:wrap;gap:1.6rem;margin-top:2rem;font-family:var(--mono);
+  font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hero .facts b{display:block;font-family:var(--display);font-size:1.5rem;letter-spacing:-.03em;
+  color:var(--ink);text-transform:none;font-weight:800}
+.band{padding-block:clamp(2.6rem,6vw,4.4rem);border-top:1px solid var(--rule)}
+.band.wash{background:var(--wash)}
+.pair{display:grid;gap:1.1rem;grid-template-columns:1fr;align-items:start}
+@media(min-width:980px){.pair{grid-template-columns:1fr 1fr;gap:1.4rem}}
+.out{border:1px solid var(--rule);border-radius:.4rem;background:var(--paper);
+  padding:1rem .95rem;font-family:var(--mono);font-size:.74rem;line-height:1.85;
+  color:var(--sub);word-break:break-word}
+.out .lab{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:.6rem}
+.out b{color:var(--ink)}
+
+/* ---- the picker mock (hero) ---------------------------------------- */
+.lbox{background:var(--paper);border:1px solid var(--rule);border-radius:.7rem;overflow:hidden;
+  box-shadow:0 26px 50px -34px rgba(16,24,40,.45)}
+.lbox .head{display:flex;align-items:center;gap:.6rem;padding:.7rem .85rem;
+  border-bottom:1px solid var(--rule);background:var(--wash)}
+.lbox .fakein{flex:1;display:flex;align-items:center;gap:.5rem;background:var(--paper);
+  border:1px solid var(--rule);border-radius:.4rem;padding:.4rem .6rem;font-size:.78rem;color:var(--sub)}
+.lbox .fakein svg{width:.82rem;height:.82rem;fill:none;stroke:currentColor;stroke-width:2}
+.lbox .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem;padding:.7rem}
+.tile{position:relative;aspect-ratio:1;border-radius:.35rem;overflow:hidden;cursor:pointer;
+  background:var(--rule);border:0;padding:0}
+.tile .img{position:absolute;inset:0;background-size:cover;background-position:center;
+  filter:blur(10px);transform:scale(1.12);opacity:.9;transition:filter .7s ease,opacity .7s ease,transform .7s ease}
+.tile.loaded .img{filter:none;opacity:1;transform:none}
+.tile .tick{position:absolute;inset:auto .28rem .28rem auto;width:1.05rem;height:1.05rem;
+  border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.28);display:grid;place-items:center;
+  opacity:0;transform:scale(.7);transition:.18s}
+.tile.sel .tick{opacity:1;transform:none;background:var(--accent);border-color:var(--accent)}
+.tile.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.tile .tick svg{width:.6rem;height:.6rem;fill:none;stroke:#fff;stroke-width:3.2}
+.lbox .foot{display:flex;align-items:center;gap:.7rem;padding:.65rem .85rem;
+  border-top:1px solid var(--rule);background:var(--wash);font-size:.78rem;color:var(--sub)}
+.lbox .foot .go{margin-left:auto;font:inherit;font-size:.76rem;font-weight:700;cursor:pointer;
+  border:0;border-radius:.35rem;padding:.42rem .85rem;background:var(--accent);color:var(--accent-ink)}
+.lbox .foot .go[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---- sponsor ------------------------------------------------------- */
+.sponsorGrid{display:grid;gap:clamp(1.6rem,4vw,3rem);grid-template-columns:1fr}
+@media(min-width:980px){.sponsorGrid{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}}
+.sponsorGrid h2{font-size:clamp(1.6rem,3.2vw,2.5rem)}
+.band .lede{max-width:70ch}
+.sponsorCard{border:1px solid var(--rule);border-radius:.6rem;background:var(--paper);padding:1.4rem}
+.sponsorCard .amt{font-size:2.6rem;font-weight:800;letter-spacing:-.04em;line-height:1}
+.sponsorCard .per{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin:.35rem 0 1.1rem}
+.sponsorCard .btn{width:100%;justify-content:center}
+.sponsorCard .fine{font-size:.76rem;color:var(--muted);margin:.85rem 0 0;line-height:1.5}
+.ways{margin-top:1.5rem;border-top:1px solid var(--rule)}
+.way{display:flex;gap:.85rem;align-items:flex-start;padding:.9rem .1rem;
+  border-bottom:1px solid var(--rule)}
+.way .ic{font-size:1.05rem}
+.way h4{margin:0 0 .2rem;font-size:.9rem;display:flex;align-items:center;gap:.5rem}
+.way p{margin:0;font-size:.82rem}
+.free{font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;padding:.1rem .34rem;
+  border:1px solid var(--accent-text);color:var(--accent-text);border-radius:999px}
+
+/* ---- footer -------------------------------------------------------- */
+footer{background:var(--wash);border-top:1px solid var(--rule);
+  padding-block:clamp(2.2rem,4vw,3.2rem);margin-top:0}
+.fcols{display:grid;gap:1.5rem;grid-template-columns:repeat(2,1fr)}
+@media(min-width:860px){.fcols{grid-template-columns:repeat(4,1fr)}}
+.fcols h5{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 .75rem;font-weight:400}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:.4rem}
+.fcols a{color:var(--sub);text-decoration:none;font-size:.85rem}
+.fcols a:hover{color:var(--accent-text)}
+.photocredits{margin-top:1.9rem;padding-top:1.1rem;border-top:1px solid var(--rule)}
+.photocredits h5{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 .65rem;font-weight:400}
+.photocredits p{margin:0;font-size:.8rem;line-height:1.75}
+.photocredits a{color:var(--sub);text-decoration:none;border-bottom:1px solid var(--rule)}
+.photocredits a:hover{color:var(--accent-text);border-color:var(--accent-text)}
+.photocredits .small{margin-top:.75rem;color:var(--muted);font-size:.75rem;max-width:48rem}
+.fbase{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between;margin-top:1.6rem;
+  padding-top:1rem;border-top:1px solid var(--rule);font-size:.77rem;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .reveal{opacity:1;transform:none}
+  .tile .img{filter:none;opacity:1;transform:none}
+}
+</style>
+
+<header class="top">
+  <div class="mx in">
+    <a class="brand" href="#/home">Unsplash<i>Toolkit</i></a>
+    <span class="ver">2.0.0</span>
+    <nav id="nav">
+      <a href="#/intro">Introduction</a>
+      <a href="#/install">Install</a>
+      <a href="#/guide">Guide</a>
+      <a href="#/api">API</a>
+      <a href="#/compliance">Compliance</a>
+      <a class="sponsor" href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">♥ Sponsor</a>
+    </nav>
+    <div class="tools">
+      <button class="search" id="openPal" aria-label="Search the documentation">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>Search</span><kbd id="kbd">⌘K</kbd>
+      </button>
+      <button class="mode" id="mode">Dark</button>
+    </div>
+    <div id="progress"></div>
+  </div>
+</header>
+
+<div class="pal" id="pal" hidden>
+  <div class="box" role="dialog" aria-label="Search">
+    <input id="palInput" placeholder="Search pages and sections…" autocomplete="off">
+    <ul id="palList" role="listbox"></ul>
+  </div>
+</div>
+<main>
+<section class="page hidden" id="home">
+  <div class="hero">
+    <div class="mx heroGrid">
+      <div>
+        <span class="logoPlate"><img src="logo.png" width="1100" height="367"
+          alt="UnsplashToolkit — a photo picker with a selected image and its photographer credit"></span>
+        <p class="eyebrow">Laravel 10 · 11 · 12 — PHP 8.2+</p>
+        <h1>You pick the photos.<br>Unsplash serves them.</h1>
+        <p class="sell">A curated registry for Laravel. Approve the photos you want, keep them in
+          named pools, and render them hotlinked from Unsplash's CDN with the photographer
+          credited every time — <mark>no downloads, no egress bill</mark>, and no way to drift out
+          of the API Guidelines by accident.</p>
+        <div class="cta">
+          <a class="btn" href="#/install">Get started</a>
+          <a class="btn ghost" href="https://github.com/gabrielesbaiz/unsplash-toolkit"
+             target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <div class="facts">
+          <div><b class="num">117</b>tests passing</div>
+          <div><b class="num">9</b>guidelines enforced</div>
+          <div><b class="num">0</b>API calls per render</div>
+        </div>
+      </div>
+      <div>
+        <div class="lbox">
+          <div class="head">
+            <div class="fakein">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <span>mountain road dusk</span>
+            </div>
+          </div>
+          <div class="tiles" id="tiles"></div>
+          <div class="foot"><span id="selCount">0 selected</span>
+            <button class="go" id="curateBtn" disabled>Curate into hero</button></div>
+        </div>
+        <p style="font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;
+           text-transform:uppercase;color:var(--muted);margin:.7rem 0 0">
+          The picker, working — click the tiles</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="mx reveal">
+      <p class="eyebrow">01 — The smallest real thing</p>
+      <h2 style="font-size:clamp(1.5rem,3vw,2rem)">Three lines, and the photo is yours to use</h2>
+      <p class="lede">Find a photo, approve it into a pool, then select from that pool wherever you
+        need it. The third line makes no API call at all.</p>
+      <div class="pair">
+        <pre><code><span class="c">// 1. A person searches and picks one.</span>
+$photo = <span class="fn">Unsplash</span>::<span class="k">search</span>(<span class="s">'mountain road dusk'</span>)-&gt;<span class="k">first</span>();
+
+<span class="c">// 2. Approve it. This reports the download event.</span>
+<span class="fn">Unsplash</span>::<span class="k">curate</span>($photo, pool: <span class="s">'login-backgrounds'</span>);
+
+<span class="c">// 3. Use it. No API call happens here.</span>
+$background = <span class="fn">UnsplashAsset</span>::<span class="k">cachedRandom</span>(<span class="s">'login-backgrounds'</span>);</code></pre>
+        <div class="out">
+          <div class="lab">What you get back</div>
+          <b>UnsplashAsset</b> #41<br>
+          unsplash_id&nbsp; <b>iYw4K_akX_U</b><br>
+          pool&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>login-backgrounds</b><br>
+          status&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>active</b><br>
+          author_name&nbsp; <b>Michael Scott</b><br>
+          width × height <b>4000 × 3000</b><br>
+          color&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>#262626</b><br>
+          disk / path&nbsp; <b>null</b> — nothing was downloaded<br>
+          <span style="color:var(--muted)">the first photo in the picker, above</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band wash">
+    <div class="mx reveal">
+      <p class="eyebrow">02 — Rendering</p>
+      <h2 style="font-size:clamp(1.5rem,3vw,2rem)">One component, every breakpoint, credit included</h2>
+      <p class="lede">Resizing happens on Unsplash's CDN by adding query parameters. The package
+        never downloads and re-encodes an image, and the <code>ixid</code> that reports the view
+        back to the photographer survives every manipulation.</p>
+      <div class="pair">
+        <pre><code><span class="k">&lt;x-unsplash::image</span>
+    <span class="fn">:photo</span>=<span class="s">"$photo"</span>
+    <span class="fn">:sizes</span>=<span class="s">"[640, 1280, 1920]"</span>
+    <span class="fn">:quality</span>=<span class="s">"70"</span> <span class="k">/&gt;</span></code></pre>
+        <div class="out">
+          <div class="lab">Rendered output</div>
+          &lt;<b>figure</b> class="unsplash-figure"&gt;<br>
+          &nbsp;&nbsp;&lt;<b>img</b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;src="images.unsplash.com/…&amp;<b>w=1920</b>&amp;<b>q=70</b>&amp;<b>ixid=…</b>"<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;srcset="… 640w, … 1280w, … 1920w"<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;style="background-color: <b>#262626</b>"<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;loading="lazy" decoding="async"&gt;<br>
+          &nbsp;&nbsp;&lt;<b>figcaption</b>&gt;Photo by <b>Michael Scott</b> on Unsplash&lt;/figcaption&gt;<br>
+          &lt;/<b>figure</b>&gt;
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="mx reveal">
+      <p class="eyebrow">03 — Honestly</p>
+      <h2 style="font-size:clamp(1.5rem,3vw,2rem)">When not to use this</h2>
+      <p class="lede">If you need one photo on one page, you do not need this package. Copy the URL
+        out of Unsplash, put it in your template, write the credit by hand. No dependency, no
+        table, no API key. And if you only want raw API access, the official
+        <code>unsplash/unsplash</code> client is thinner than this and has no opinions.</p>
+      <div class="note">
+        <b>The honest trade:</b> you never hold the image files. That is not a limitation this
+        package invented — the API Guidelines require hotlinking. So if a photographer deletes a
+        photo, your copy dies with it. A scheduled <code>unsplash:verify</code> takes dead photos
+        out of rotation and a colour fallback keeps pages readable, but it cannot bring the photo
+        back. If you need bytes you control forever, buy a stock licence and use
+        <code>spatie/laravel-medialibrary</code>.
+      </div>
+      <div class="grid3" style="margin-top:1.4rem">
+        <div class="card"><div class="n">Control</div><p>Identical to downloading — same pool, same
+          rows, same editorial decisions.</p></div>
+        <div class="card"><div class="n">Cost</div><p>No storage bill, no egress bill. A registry
+          row is a few KB of metadata.</p></div>
+        <div class="card"><div class="n">Credit</div><p>Views reach the photographer, because the
+          tracking parameter is never stripped.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band wash">
+    <div class="mx sponsorGrid reveal">
+      <div>
+        <p class="eyebrow">Support this package</p>
+        <h2>Free forever. Not free to <mark>maintain</mark>.</h2>
+        <p>The work you never see is the work that keeps your login page loading. Unsplash changes
+          a response shape, a photographer deletes the photo behind your hero, Laravel ships a
+          major and the HTTP client moves under you. None of that reaches your application,
+          because <code>unsplash:verify</code> quietly retired the dead photo at 3am and the test
+          suite caught the rest. It stays MIT either way.</p>
+        <p>Sponsorship buys the hours that go into reading the API Guidelines again when they
+          change, keeping the compliance suite honest, and testing against every Laravel major
+          before you upgrade to it. Not features — maintenance, which is the part nobody
+          volunteers for. It stays MIT either way.</p>
+        <div class="ways">
+          <div class="way"><span class="ic">⭐</span><div><h4>Star the repo <span class="free">FREE</span></h4>
+            <p>Thirty seconds, and it is the first signal other developers look at.</p></div></div>
+          <div class="way"><span class="ic">🐛</span><div><h4>Open a good issue <span class="free">FREE</span></h4>
+            <p>A clear reproduction is worth more than you think.</p></div></div>
+          <div class="way"><span class="ic">❤️</span><div><h4>Sponsor from $5</h4>
+            <p>Recurring support is what makes maintenance plannable rather than occasional.</p></div></div>
+          <div class="way"><span class="ic">🏢</span><div><h4>Company tier</h4>
+            <p>Your logo in the README and on this page, where other teams will see it.</p></div></div>
+        </div>
+        <div class="note" style="margin-top:1.5rem">
+          <b>Why ask at all?</b> This package is MIT and always will be. Nothing is paywalled,
+          nothing phones home, and no <em>feature</em> is held back for sponsors. Sponsorship buys
+          maintenance time, not features — and if you cannot sponsor, the star and the bug report
+          genuinely help.
+        </div>
+      </div>
+      <div>
+        <div class="sponsorCard">
+          <div class="amt num">$5</div>
+          <p class="per">per month · cancel anytime</p>
+          <a class="btn" href="https://github.com/sponsors/gabrielesbaiz" target="_blank"
+             rel="noopener">♥ Become a sponsor</a>
+          <p class="fine">Company tiers get a logo in the README and on this page.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page hidden" id="intro">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Introduction</h1>
+      <p class="lede">What this package is, the problem it solves, and when you should reach for something else.</p>
+      
+<section id="i-what"><h2>What it is</h2>
+<p>UnsplashToolkit keeps a <b>curated registry</b>: a record of the photos your application has
+approved, grouped into named pools. It stores each photo's metadata and the hotlink URLs Unsplash
+returned — never the image bytes. Selecting a photo reads your own database, so rendering a page
+costs no Unsplash API requests at all.</p>
+<div class="note"><b>The guideline that shapes everything:</b> "All API uses must use the hotlinked
+image URLs returned by the API under the <code>photo.urls</code> properties."
+<a href="https://help.unsplash.com/api-guidelines" target="_blank" rel="noopener">Unsplash API
+Guidelines</a></div></section>
+
+<section id="i-why"><h2>Curation and storage are two different problems</h2>
+<p>Most applications that download Unsplash photos are not trying to own files. They are trying to
+control <em>which</em> photos appear. Those are separable, and only the second one is yours.</p>
+<div class="scroller"><table>
+<thead><tr><th></th><th>Downloading files</th><th>The curated registry</th></tr></thead>
+<tbody>
+<tr><td>Control over which photos appear</td><td class="no">yours</td><td><b>identical</b></td></tr>
+<tr><td>Hotlinking guideline</td><td class="no">violated</td><td><b>satisfied</b></td></tr>
+<tr><td>Views credited to the photographer</td><td class="no">broken — ixid is lost</td><td><b>works</b></td></tr>
+<tr><td>Bytes served by</td><td class="no">your disk, your egress bill</td><td><b>Unsplash's CDN, free</b></td></tr>
+<tr><td>API calls when a page renders</td><td class="no">none</td><td><b>none</b></td></tr>
+<tr><td>Cost of approving a photo</td><td class="no">1 call + a full image transfer + an upload</td><td><b>1 call</b></td></tr>
+<tr><td>Responsive sizes</td><td class="no">one, baked in at download</td><td><b>any, on demand</b></td></tr>
+<tr><td>A photo removed upstream</td><td><b>you still have it</b></td><td class="no">unsplash:verify retires it</td></tr>
+</tbody></table></div>
+<p>That last row is the whole trade, and it is why <code>unsplash:verify</code> exists.</p></section>
+
+<section id="i-need"><h2>Do you need this?</h2>
+<p>If you need one photo on one page, <b>you do not</b>. Copy the URL out of Unsplash and put it in
+your template:</p>
+<pre><code>&lt;<span class="k">img</span> <span class="fn">src</span>=<span class="s">"https://images.unsplash.com/photo-1506905925346?w=1920&amp;q=80"</span>&gt;</code></pre>
+<p>Add the credit by hand and you are done. No dependency, no table, no API key.</p>
+<div class="note">That URL carries no <code>ixid</code>, because no API request was made to produce
+it — you copied it off the website. Attribution is still required either way. As soon as you
+<em>are</em> calling the API, the tracking parameter has to survive every resize, which is the part
+this package takes off your hands.</div>
+<p>If you want raw API access and nothing else, the official <code>unsplash/unsplash</code> PHP
+client is thinner than this package and has no opinions.</p>
+<p>You want this package when <b>a person has to choose the photos, and the application has to keep
+choosing between them</b>: a rotating login background, approved article headers, seasonal heroes
+someone in marketing curates.</p>
+<div class="note warn"><b>The honest trade:</b> you never hold the image files. If a photographer
+deletes a photo, your copy dies with it. <code>unsplash:verify</code> takes dead photos out of
+rotation and a colour fallback keeps pages readable, but it cannot bring the photo back. If you need
+bytes you control forever, buy a stock licence and use <code>spatie/laravel-medialibrary</code>.</div>
+</section>
+
+<section id="i-req"><h2>Requirements</h2>
+<ul><li>PHP 8.2, 8.3 or 8.4</li><li>Laravel 10, 11 or 12</li>
+<li>An Unsplash API access key — <a href="https://unsplash.com/developers" target="_blank" rel="noopener">register an application</a></li></ul>
+<p>Unsplash grants <b>50 requests per hour</b> in demo mode, and 5000 once your application is
+approved for production. Because pools are read from your database, that budget is spent when
+someone <em>curates</em> a photo, never when a page renders one.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="install">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Installation</h1>
+      <p class="lede">Install, migrate, configure and verify — four commands and two environment variables.</p>
+      
+<section id="in-composer"><h2>Install the package</h2>
+<pre><code>composer require gabrielesbaiz/unsplash-toolkit</code></pre></section>
+
+<section id="in-migrate"><h2>Publish and run the migrations</h2>
+<pre><code>php artisan vendor:publish --tag="unsplash-toolkit-migrations"
+php artisan migrate</code></pre>
+<p>Three migrations ship: <code>create_unsplash_assets_table</code>,
+<code>create_unsplashables_table</code>, and <code>upgrade_unsplash_tables_to_v2</code>, which is
+additive and only does anything on a 1.x installation.</p></section>
+
+<section id="in-config"><h2>Publish the config</h2>
+<pre><code>php artisan vendor:publish --tag="unsplash-toolkit-config"</code></pre>
+<p>This writes <code>config/unsplash-toolkit.php</code>. Every setting is documented on the
+<a href="#/configuration">Configuration</a> page.</p></section>
+
+<section id="in-env"><h2>Set the environment</h2>
+<pre><code>UNSPLASH_ACCESS_KEY=your-access-key
+UNSPLASH_APP_NAME="Your Application"</code></pre>
+<div class="note"><b><code>UNSPLASH_APP_NAME</code> is not optional.</b> It becomes the
+<code>utm_source</code> of every photographer credit, which the API Guidelines require. If it is
+unset — or still the 1.x <code>your_app_name</code> placeholder — the package throws
+<code>MissingAttributionNameException</code> rather than emit a credit that would not qualify.</div>
+</section>
+
+<section id="in-verify"><h2>Verify the install</h2>
+<pre><code>php artisan unsplash:doctor</code></pre>
+<pre><code>  <span class="c">Rule                Status   Detail</span>
+  C7 credentials      <span class="k">OK</span>       Access key abcd********op is set server side.
+  C5 attribution      <span class="k">OK</span>       utm_source is "Your Application".
+  C1 hotlinking       <span class="k">OK</span>       Local storage is disabled.
+  C6 rate limit       <span class="k">OK</span>       Capped at 50 requests per hour.</code></pre>
+<p>It exits non-zero on a violation, so it can gate a deploy. Then curate your first photo:</p>
+<pre><code>php artisan unsplash:search "mountain road"
+php artisan unsplash:curate <span class="s">&lt;id&gt;</span> --pool=login-backgrounds</code></pre></section>
+
+<section id="in-schedule"><h2>Schedule the health checks</h2>
+<p>Because images are hotlinked, a photo removed by its photographer has to be taken out of
+rotation:</p>
+<pre><code><span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:verify'</span>)-&gt;<span class="k">daily</span>();
+<span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:refresh'</span>)-&gt;<span class="k">weekly</span>();</code></pre></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="configuration">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Configuration</h1>
+      <p class="lede">Every key in <code>config/unsplash-toolkit.php</code>, its default, and what changing it does.</p>
+      <section id="cfg-publish"><h2>Publishing</h2><pre><code>php artisan vendor:publish --tag="unsplash-toolkit-config"</code></pre><p>Config is read through a typed <code>Support\Config</code> class with a single <code>KEY</code> constant, so the published file name and the key the package reads from can never drift apart — which is exactly the bug that made 1.x unable to run at all.</p></section><section id="cfg-credentials"><h2>Credentials</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>access_key</code></td><td><code>UNSPLASH_ACCESS_KEY</code></td><td>Your Unsplash access key. Required</td></tr><tr><td><code>secret_key</code></td><td><code>UNSPLASH_SECRET_KEY</code></td><td>Only needed for OAuth flows; redacted from errors</td></tr><tr><td><code>base_url</code></td><td><code>https://api.unsplash.com</code></td><td>The API host, for proxies and tests</td></tr><tr><td><code>api_version</code></td><td><code>v1</code></td><td>Sent as the <code>Accept-Version</code> header</td></tr></tbody></table></div></section><section id="cfg-compliance"><h2>Compliance</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>compliance.app_name</code></td><td><code>UNSPLASH_APP_NAME</code></td><td>The <code>utm_source</code> of every credit. <b>Required</b> — a missing or placeholder value throws</td></tr><tr><td><code>compliance.allow_local_storage</code></td><td><code>false</code></td><td>Permits <code>import()</code> to write image bytes to a disk</td></tr><tr><td><code>compliance.storage_permission_reference</code></td><td><code>null</code></td><td>The Unsplash ticket granting that permission. Required when the flag is on</td></tr></tbody></table></div></section><section id="cfg-http"><h2>HTTP</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>http.timeout</code></td><td><code>10</code></td><td>Seconds to wait for a response</td></tr><tr><td><code>http.connect_timeout</code></td><td><code>5</code></td><td>Seconds to wait for a connection</td></tr><tr><td><code>http.concurrency</code></td><td><code>5</code></td><td>Requests a pooled batch fires at once</td></tr><tr><td><code>http.retry.times</code></td><td><code>3</code></td><td>Attempts before giving up</td></tr><tr><td><code>http.retry.sleep</code></td><td><code>250</code></td><td>Milliseconds between attempts</td></tr><tr><td><code>http.retry.backoff</code></td><td><code>true</code></td><td>Doubles the wait each attempt</td></tr></tbody></table></div></section><section id="cfg-rate-limiting"><h2>Rate limiting</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>rate_limit.enabled</code></td><td><code>true</code></td><td>Refuses requests over budget before sending them</td></tr><tr><td><code>rate_limit.key</code></td><td><code>unsplash-toolkit</code></td><td>The rate limiter key</td></tr><tr><td><code>rate_limit.max_per_hour</code></td><td><code>50</code></td><td>Your granted budget. Raise to 5000 once approved for production</td></tr></tbody></table></div></section><section id="cfg-cache"><h2>Cache</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>cache.enabled</code></td><td><code>true</code></td><td>Caches API responses. Never caches image bytes or download events</td></tr><tr><td><code>cache.store</code></td><td><code>null</code></td><td>The store to use; null means your default</td></tr><tr><td><code>cache.ttl</code></td><td><code>3600</code></td><td>Seconds a response stays cached</td></tr><tr><td><code>cache.prefix</code></td><td><code>unsplash</code></td><td>Cache key prefix</td></tr></tbody></table></div></section><section id="cfg-pools"><h2>Pools</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>pools.default</code></td><td><code>default</code></td><td>The pool used when none is named</td></tr><tr><td><code>pools.selection_ttl</code></td><td><code>600</code></td><td>Seconds <code>cachedRandom()</code> keeps its choice</td></tr><tr><td><code>pools.min_size</code></td><td><code>5</code></td><td>Active photos below which <code>PoolDepleted</code> fires</td></tr><tr><td><code>pools.fallback_color</code></td><td><code>#0f172a</code></td><td>Painted when a photo has no dominant colour</td></tr></tbody></table></div></section><section id="cfg-images"><h2>Images</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>images.quality</code></td><td><code>80</code></td><td>Default JPEG quality on resized URLs</td></tr><tr><td><code>images.format</code></td><td><code>jpg</code></td><td>Default format; <code>webp</code> and <code>avif</code> also work</td></tr><tr><td><code>images.fit</code></td><td><code>crop</code></td><td>How Unsplash fits an image to given dimensions</td></tr><tr><td><code>images.srcset_widths</code></td><td><code>[640, 960, 1280, 1920, 2560]</code></td><td>Widths a srcset is generated for</td></tr><tr><td><code>images.lazy</code></td><td><code>true</code></td><td>Adds <code>loading="lazy"</code> to the image component</td></tr></tbody></table></div></section><section id="cfg-database"><h2>Database</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>database.connection</code></td><td><code>null</code></td><td>The connection the model uses; null means default</td></tr><tr><td><code>database.assets_table</code></td><td><code>unsplash_assets</code></td><td>The registry table</td></tr><tr><td><code>database.pivot_table</code></td><td><code>unsplashables</code></td><td>The polymorphic pivot table</td></tr></tbody></table></div></section><section id="cfg-picker"><h2>Picker</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>picker.enabled</code></td><td><code>true</code></td><td>Registers the two proxy routes</td></tr><tr><td><code>picker.route_prefix</code></td><td><code>unsplash-toolkit</code></td><td>The URI prefix they live under</td></tr><tr><td><code>picker.middleware</code></td><td><code>['web', 'auth']</code></td><td>What guards them. Use your admin panel's group</td></tr></tbody></table></div></section><section id="cfg-storage-and-queue"><h2>Storage and queue</h2><div class="scroller"><table><thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>storage.disk</code></td><td><code>local</code></td><td>Where <code>import()</code> writes, when permitted</td></tr><tr><td><code>storage.path</code></td><td><code>unsplash</code></td><td>The directory it writes into</td></tr><tr><td><code>queue.connection</code></td><td><code>null</code></td><td>Connection for <code>ImportUnsplashPhotoJob</code></td></tr><tr><td><code>queue.queue</code></td><td><code>null</code></td><td>Queue for the same</td></tr><tr><td><code>events</code></td><td><code>true</code></td><td>Whether the package dispatches its events</td></tr></tbody></table></div></section>
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="guide">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Guide</h1>
+      <p class="lede">Browsing, curating, selecting and rendering — the whole working surface of the package.</p>
+      
+<section id="g-browse"><h2>Browsing Unsplash</h2>
+<p>Every browse method returns a <code>PendingRequest</code> you refine with chained calls, then
+execute with <code>-&gt;get()</code>, <code>-&gt;first()</code> or <code>-&gt;toArray()</code>.</p>
+<pre><code><span class="k">use</span> Gabrielesbaiz\UnsplashToolkit\Facades\<span class="fn">Unsplash</span>;
+<span class="k">use</span> Gabrielesbaiz\UnsplashToolkit\Enums\{<span class="fn">Color</span>, <span class="fn">Orientation</span>, <span class="fn">OrderBy</span>};
+
+$results = <span class="fn">Unsplash</span>::<span class="k">search</span>(<span class="s">'buildings'</span>)
+    -&gt;<span class="k">color</span>(<span class="fn">Color</span>::BlackAndWhite)
+    -&gt;<span class="k">orientation</span>(<span class="fn">Orientation</span>::Squarish)
+    -&gt;<span class="k">orderBy</span>(<span class="fn">OrderBy</span>::Relevant)
+    -&gt;<span class="k">perPage</span>(<span class="s">30</span>)
+    -&gt;<span class="k">get</span>();
+
+$results-&gt;total;          <span class="c">// 1337</span>
+$results-&gt;totalPages;
+$results-&gt;hasMorePages();
+$results-&gt;photos-&gt;ids();  <span class="c">// ['Dwu85P9SOIk', …]</span>
+
+<span class="k">foreach</span> ($results <span class="k">as</span> $photo) { $photo-&gt;id; }</code></pre>
+<p>Enums are optional — plain strings work too, which matters when the value comes from a request:
+<code>-&gt;color($request-&gt;string('color'))</code>.</p>
+<h3>Other entry points</h3>
+<pre><code><span class="fn">Unsplash</span>::<span class="k">photo</span>(<span class="s">'Dwu85P9SOIk'</span>);                  <span class="c">// Photo</span>
+<span class="fn">Unsplash</span>::<span class="k">photosByIds</span>([$a, $b, $c]);             <span class="c">// pooled, concurrent</span>
+<span class="fn">Unsplash</span>::<span class="k">random</span>()-&gt;<span class="k">term</span>(<span class="s">'car'</span>)-&gt;<span class="k">count</span>(<span class="s">5</span>)-&gt;<span class="k">get</span>();
+<span class="fn">Unsplash</span>::<span class="k">collection</span>($id);
+<span class="fn">Unsplash</span>::<span class="k">collectionPhotos</span>($id)-&gt;<span class="k">get</span>();
+<span class="fn">Unsplash</span>::<span class="k">userPhotos</span>(<span class="s">'ashim'</span>)-&gt;<span class="k">get</span>();
+<span class="fn">Unsplash</span>::<span class="k">stats</span>();</code></pre>
+<div class="note warn"><b>Do not put <code>Unsplash::random()</code> in a page render.</b> It spends
+an API request on every page view, and the guidelines ask for non-automated use. Curate the photos
+you like, then select from the pool.</div></section>
+
+<section id="g-immutable"><h2>The builder is immutable</h2>
+<p>Every modifier returns a <b>new</b> instance, so one base request can safely branch:</p>
+<pre><code>$base = <span class="fn">Unsplash</span>::<span class="k">search</span>(<span class="s">'cars'</span>)-&gt;<span class="k">perPage</span>(<span class="s">30</span>);
+
+$wide = $base-&gt;<span class="k">orientation</span>(<span class="fn">Orientation</span>::Landscape)-&gt;<span class="k">get</span>();
+$tall = $base-&gt;<span class="k">orientation</span>(<span class="fn">Orientation</span>::Portrait)-&gt;<span class="k">get</span>();
+<span class="c">// $base is untouched, and $wide's orientation never reaches $tall.</span></code></pre>
+<p>In 1.x the facade cached one mutable instance, so <code>search()-&gt;term('cats')</code> followed
+by <code>photos()</code> sent <code>photos?query=cats</code>. That class of bug cannot happen now.</p>
+</section>
+
+<section id="g-photo"><h2>Working with a photo</h2>
+<pre><code>$photo-&gt;<span class="k">url</span>(<span class="fn">Size</span>::Regular);                   <span class="c">// exactly what Unsplash returned</span>
+$photo-&gt;<span class="k">url</span>(width: <span class="s">1920</span>, quality: <span class="s">70</span>);       <span class="c">// resized on Unsplash's CDN</span>
+$photo-&gt;<span class="k">srcset</span>([<span class="s">640</span>, <span class="s">1280</span>, <span class="s">1920</span>]);
+$photo-&gt;<span class="k">aspectRatio</span>();
+$photo-&gt;<span class="k">alt</span>();
+$photo-&gt;<span class="k">attribution</span>()-&gt;<span class="k">toHtml</span>();
+$photo-&gt;color; $photo-&gt;blurHash; $photo-&gt;author-&gt;name; $photo-&gt;tags;</code></pre>
+<p>The five sizes are <code>Raw</code>, <code>Full</code>, <code>Regular</code>, <code>Small</code>
+and <code>Thumb</code>. Resizing happens on Unsplash's servers by adding query parameters; the
+package never downloads and re-encodes an image, and every URL keeps its <code>ixid</code>.</p>
+</section>
+
+<section id="g-curate"><h2>Curating</h2>
+<p>Approving a photo is the moment a person chooses it, which is exactly the event Unsplash asks to
+be told about. Curating reports it for you.</p>
+<pre><code>$asset = <span class="fn">Unsplash</span>::<span class="k">curate</span>($photo, pool: <span class="s">'login-backgrounds'</span>);
+
+<span class="fn">Unsplash</span>::<span class="k">curateMany</span>($photos, pool: <span class="s">'hero'</span>);
+<span class="fn">Unsplash</span>::<span class="k">curateCollection</span>(<span class="s">'1234567'</span>, pool: <span class="s">'hero'</span>);
+<span class="fn">Unsplash</span>::<span class="k">curate</span>($photo, pool: <span class="s">'hero'</span>, curatedBy: <span class="k">auth</span>()-&gt;<span class="k">user</span>());</code></pre>
+<p>Curating the same photo twice updates the existing row rather than duplicating it —
+<code>unsplash_id</code> is unique.</p>
+<div class="note">There is deliberately no "fetch N random photos and save them all" method. That was
+the documented idiom in 1.x, and it is the automated bulk use the guidelines ask applications not to
+make.</div></section>
+
+<section id="g-pools"><h2>Pools and selection</h2>
+<pre><code><span class="fn">UnsplashAsset</span>::<span class="k">random</span>(<span class="s">'login-backgrounds'</span>);        <span class="c">// two queries, no HTTP</span>
+<span class="fn">UnsplashAsset</span>::<span class="k">cachedRandom</span>(<span class="s">'login-backgrounds'</span>);  <span class="c">// one query on a cache hit</span>
+<span class="fn">UnsplashAsset</span>::<span class="k">randomOrFail</span>(<span class="s">'login-backgrounds'</span>);  <span class="c">// throws when empty</span>
+<span class="fn">UnsplashAsset</span>::<span class="k">pool</span>(<span class="s">'hero'</span>)-&gt;<span class="k">active</span>()-&gt;<span class="k">get</span>();</code></pre>
+<p>All of them skip photos whose status is not <code>active</code>, so a photo retired by
+<code>unsplash:verify</code> stops appearing with no change at the call site.
+<code>cachedRandom()</code> re-checks the cached photo is still selectable and drops the entry if it
+is not.</p></section>
+
+<section id="g-render"><h2>Rendering</h2>
+<pre><code><span class="k">&lt;x-unsplash::image</span> <span class="fn">:photo</span>=<span class="s">"$photo"</span> <span class="fn">:sizes</span>=<span class="s">"[640, 1280, 1920]"</span> <span class="k">/&gt;</span>
+<span class="k">&lt;x-unsplash::attribution</span> <span class="fn">:asset</span>=<span class="s">"$photo"</span> <span class="k">/&gt;</span></code></pre>
+<div class="scroller"><table>
+<thead><tr><th>Prop</th><th>Default</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>photo</code></td><td><code>null</code></td><td>The photo. Null renders nothing at all</td></tr>
+<tr><td><code>sizes</code></td><td><code>images.srcset_widths</code></td><td>Widths the srcset is generated for</td></tr>
+<tr><td><code>sizes-attribute</code></td><td><code>100vw</code></td><td>The <code>sizes</code> HTML attribute</td></tr>
+<tr><td><code>width</code> / <code>height</code></td><td><code>null</code></td><td>Fixed dimensions for the src and element</td></tr>
+<tr><td><code>quality</code></td><td><code>images.quality</code></td><td>JPEG quality, 1–100</td></tr>
+<tr><td><code>alt</code></td><td>the photo's own</td><td>Overrides the alternative text</td></tr>
+<tr><td><code>attribution</code></td><td><code>true</code></td><td>Renders the credit inline</td></tr>
+<tr><td><code>lazy</code></td><td><code>images.lazy</code></td><td>Adds <code>loading="lazy"</code></td></tr>
+</tbody></table></div>
+<p>Both components render nothing when given <code>null</code>, so a page whose pool is empty loses
+its image rather than failing.</p></section>
+
+<section id="g-models"><h2>Attaching photos to your models</h2>
+<pre><code><span class="k">use</span> Gabrielesbaiz\UnsplashToolkit\Concerns\<span class="fn">HasUnsplashables</span>;
+
+<span class="k">class</span> <span class="fn">Article</span> <span class="k">extends</span> <span class="fn">Model</span>
+{
+    <span class="k">use</span> <span class="fn">HasUnsplashables</span>;
+}
+
+$article-&gt;<span class="k">unsplash</span>()-&gt;<span class="k">attach</span>($asset);
+$article-&gt;<span class="k">unsplashPhoto</span>();
+<span class="fn">Article</span>::<span class="k">with</span>(<span class="s">'unsplash'</span>)-&gt;<span class="k">get</span>();   <span class="c">// no N+1</span></code></pre>
+<p>The trait boots through <code>bootHasUnsplashables()</code>, so a model with its own
+<code>boot()</code> keeps it. The 1.x trait declared <code>boot()</code> and silently replaced yours.
+</p></section>
+
+<section id="g-picker"><h2>Building a picker</h2>
+<p>Two routes back an admin picker, so a client-side field never needs your access key. They live
+under <code>picker.route_prefix</code>, guarded by <code>picker.middleware</code>.</p>
+<p><b><code>GET {prefix}/search</code></b> — <code>query</code>, plus optional <code>page</code>,
+<code>per_page</code> (max 30), <code>orientation</code>, <code>color</code>:</p>
+<pre><code>{
+  <span class="s">"total"</span>: 132, <span class="s">"total_pages"</span>: 6, <span class="s">"page"</span>: 1,
+  <span class="s">"results"</span>: [{
+    <span class="s">"id"</span>: <span class="s">"Dwu85P9SOIk"</span>,
+    <span class="s">"thumb"</span>: <span class="s">"https://images.unsplash.com/…?ixid=…&amp;w=400"</span>,
+    <span class="s">"width"</span>: 4000, <span class="s">"height"</span>: 2500, <span class="s">"aspect_ratio"</span>: 1.6,
+    <span class="s">"color"</span>: <span class="s">"#26260c"</span>, <span class="s">"blur_hash"</span>: <span class="s">"LFC$yHwc8^$yIAS$%M"</span>,
+    <span class="s">"author"</span>: <span class="s">"…"</span>, <span class="s">"author_url"</span>: <span class="s">"…utm_source=…&amp;utm_medium=referral"</span>,
+    <span class="s">"attribution_html"</span>: <span class="s">"Photo by …"</span>
+  }]
+}</code></pre>
+<div class="note"><b>A picker displays photos, so it must credit them too.</b> The attribution
+fields arrive pre-tagged for exactly that reason — render <code>attribution_html</code>, or build
+your own markup from <code>author</code> and <code>author_url</code>, but never reconstruct the UTM
+parameters in client code.</div>
+<p><b><code>POST {prefix}/curate</code></b> — <code>ids</code> (1–30), optional <code>pool</code> —
+returns <code>assets[]</code> carrying both the <code>unsplash_id</code> and the primary
+<code>id</code> a form field attaches to a record.</p></section>
+
+<section id="g-test"><h2>Testing</h2>
+<pre><code>$fake = <span class="fn">Unsplash</span>::<span class="k">fake</span>();
+
+<span class="fn">Unsplash</span>::<span class="k">curate</span>(<span class="fn">Unsplash</span>::<span class="k">photo</span>(<span class="s">'Dwu85P9SOIk'</span>), <span class="s">'hero'</span>);
+
+<span class="k">expect</span>($fake-&gt;<span class="k">sentRequestTo</span>(<span class="s">'/download'</span>))-&gt;<span class="k">toBeTrue</span>();
+<span class="k">expect</span>($fake-&gt;<span class="k">requestCount</span>())-&gt;<span class="k">toBe</span>(<span class="s">2</span>);</code></pre>
+<p><code>Http::fake()</code> also works throughout, because the driver uses Laravel's HTTP client
+rather than Guzzle directly. The factory builds registry rows without touching the API:
+<code>UnsplashAsset::factory()-&gt;count(10)-&gt;pool('hero')-&gt;create()</code>.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="recipes">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Recipes</h1>
+      <p class="lede">Whole, paste-able solutions to the tasks this package actually gets used for.</p>
+      <section id="r-all"><h2>Eight recipes</h2><details><summary>A rotating login background across a multi-tenant app</summary><div class="in"><pre><code><span class="c">// Once, when an editor approves photos:</span>
+<span class="fn">Unsplash</span>::<span class="k">curate</span>($photo, pool: <span class="s">"login-{$tenant-&gt;slug}"</span>);
+
+<span class="c">// In a shared helper, so every controller resolves it the same way:</span>
+<span class="k">function</span> <span class="fn">currentWallpaper</span>(): ?<span class="fn">UnsplashAsset</span>
+{
+    <span class="k">return</span> <span class="fn">UnsplashAsset</span>::<span class="k">cachedRandom</span>(<span class="s">'login-'</span>.<span class="k">tenant</span>()-&gt;slug);
+}</code></pre>
+<pre><code><span class="k">&lt;div</span> <span class="fn">class</span>=<span class="s">"login"</span> <span class="fn">style</span>=<span class="s">"background-image: url('{{ $wallpaper?-&gt;url(width: 1920, quality: 80) }}')"</span><span class="k">&gt;</span>
+    <span class="k">&lt;x-unsplash::attribution</span> <span class="fn">:asset</span>=<span class="s">"$wallpaper"</span> <span class="k">/&gt;</span>
+<span class="k">&lt;/div&gt;</span></code></pre>
+<p>No API call, one cached query, and the credit disappears rather than crashing when the pool is
+empty.</p></div></details><details><summary>Serve the background through a route instead of inline CSS</summary><div class="in"><pre><code><span class="fn">Route</span>::<span class="k">get</span>(<span class="s">'wallpaper'</span>, <span class="k">function</span> () {
+    $wallpaper = <span class="fn">UnsplashAsset</span>::<span class="k">cachedRandom</span>(<span class="s">'login-backgrounds'</span>);
+
+    <span class="k">abort_if</span>($wallpaper === <span class="k">null</span>, <span class="s">404</span>);
+
+    <span class="k">return</span> <span class="k">redirect</span>()-&gt;<span class="k">away</span>($wallpaper-&gt;<span class="k">url</span>(width: <span class="s">1920</span>, quality: <span class="s">80</span>));
+});</code></pre>
+<p>The redirect points at Unsplash's CDN, so your server never carries the image.</p></div></details><details><summary>Let an editor curate from your admin panel</summary><div class="in"><pre><code><span class="k">const</span> res = <span class="k">await</span> <span class="fn">fetch</span>(<span class="s">`/unsplash-toolkit/search?query=${term}&amp;per_page=24`</span>)
+<span class="k">const</span> { results } = <span class="k">await</span> res.<span class="fn">json</span>()
+
+<span class="c">// Render each tile with its aspect_ratio and color,</span>
+<span class="c">// and results[i].attribution_html underneath it.</span>
+
+<span class="k">await</span> <span class="fn">fetch</span>(<span class="s">'/unsplash-toolkit/curate'</span>, {
+  method: <span class="s">'POST'</span>,
+  headers: { <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span>, <span class="s">'X-CSRF-TOKEN'</span>: token },
+  body: <span class="fn">JSON</span>.<span class="k">stringify</span>({ ids: selected, pool: <span class="s">'hero'</span> }),
+})</code></pre>
+<p>The response gives you <code>assets[].id</code>, the primary keys to attach to a record.</p></div></details><details><summary>Give an article a header photo</summary><div class="in"><pre><code><span class="k">class</span> <span class="fn">Article</span> <span class="k">extends</span> <span class="fn">Model</span>
+{
+    <span class="k">use</span> <span class="fn">HasUnsplashables</span>;
+}
+
+$article-&gt;<span class="k">unsplash</span>()-&gt;<span class="k">sync</span>([$request-&gt;<span class="k">integer</span>(<span class="s">'unsplash_asset_id'</span>)]);</code></pre>
+<pre><code><span class="k">@if</span> ($photo = $article-&gt;<span class="k">unsplashPhoto</span>())
+    <span class="k">&lt;x-unsplash::image</span> <span class="fn">:photo</span>=<span class="s">"$photo"</span> <span class="fn">:sizes</span>=<span class="s">"[640, 1280, 1920]"</span> <span class="k">/&gt;</span>
+<span class="k">@endif</span></code></pre>
+<p>Use <code>Article::with('unsplash')-&gt;get()</code> on index pages to avoid an N+1.</p></div></details><details><summary>Promote a collection your team curates on unsplash.com</summary><div class="in"><pre><code><span class="fn">Unsplash</span>::<span class="k">curateCollection</span>(<span class="s">'1234567'</span>, pool: <span class="s">'hero'</span>);
+
+<span class="c">// Or keep it in step, if the collection is maintained continuously:</span>
+<span class="fn">Schedule</span>::<span class="k">call</span>(<span class="k">fn</span> () =&gt; <span class="fn">Unsplash</span>::<span class="k">curateCollection</span>(<span class="s">'1234567'</span>, <span class="s">'hero'</span>))-&gt;<span class="k">daily</span>();</code></pre>
+<p>Existing photos are updated rather than duplicated.</p></div></details><details><summary>Curate in the background from a queue</summary><div class="in"><pre><code><span class="k">use</span> Gabrielesbaiz\UnsplashToolkit\Jobs\<span class="fn">ImportUnsplashPhotoJob</span>;
+
+<span class="fn">Bus</span>::<span class="k">batch</span>(
+    <span class="k">collect</span>($ids)-&gt;<span class="k">map</span>(<span class="k">fn</span> (<span class="k">string</span> $id) =&gt; <span class="k">new</span> <span class="fn">ImportUnsplashPhotoJob</span>($id, pool: <span class="s">'hero'</span>))
+)-&gt;<span class="k">dispatch</span>();</code></pre>
+<p>Each job reports its own download event, so a long selection does not block a web request.</p></div></details><details><summary>Alert editors before a pool runs dry</summary><div class="in"><pre><code><span class="k">use</span> Gabrielesbaiz\UnsplashToolkit\Events\<span class="fn">PoolDepleted</span>;
+
+<span class="fn">Event</span>::<span class="k">listen</span>(<span class="k">function</span> (<span class="fn">PoolDepleted</span> $event) {
+    <span class="fn">Notification</span>::<span class="k">route</span>(<span class="s">'slack'</span>, <span class="k">config</span>(<span class="s">'services.slack.editors'</span>))
+        -&gt;<span class="k">notify</span>(<span class="k">new</span> <span class="fn">PoolRunningLow</span>($event-&gt;pool, $event-&gt;remaining, $event-&gt;minimum));
+});</code></pre>
+<p>Pair it with <code>Schedule::command('unsplash:verify')-&gt;daily()</code>, which is what retires
+removed photos and therefore what shrinks a pool.</p></div></details><details><summary>Gate a deploy on compliance</summary><div class="in"><pre><code>- <span class="k">name</span>: Unsplash guidelines
+  <span class="k">run</span>: php artisan unsplash:doctor --strict</code></pre>
+<p>Exits non-zero on a missing app name, an unset key, storage enabled without a recorded
+permission, or URLs that have lost their <code>ixid</code>.</p></div></details></section>
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="commands">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Commands</h1>
+      <p class="lede">Nine artisan commands. Two of them belong in your scheduler, and one belongs in CI.</p>
+      <section id="cmd-all"><h2>All commands</h2><div class="scroller"><table><thead><tr><th>Signature</th><th>What it does</th></tr></thead><tbody><tr><td><code>unsplash:search {query} {--per-page=10} {--orientation=} {--color=}</code></td><td>Search photos and print a table of ids</td></tr><tr><td><code>unsplash:curate {id*} {--pool=}</code></td><td>Approve one or more photos into a pool</td></tr><tr><td><code>unsplash:pools</code></td><td>Show the size and health of every pool</td></tr><tr><td><code>unsplash:verify {--pool=} {--stale=7}</code></td><td>Re-check photos still exist, retiring those that do not</td></tr><tr><td><code>unsplash:refresh {--pool=} {--backfill} {--assign-pool=}</code></td><td>Refresh metadata; <code>--backfill</code> rebuilds rows with no URLs</td></tr><tr><td><code>unsplash:status</code></td><td>Show the rate limit and what is spent</td></tr><tr><td><code>unsplash:doctor {--strict}</code></td><td>Audit the app against the guidelines; exits non-zero on a violation</td></tr><tr><td><code>unsplash:cache-clear</code></td><td>Flush cached API responses</td></tr><tr><td><code>unsplash:prune {--pool=} {--days=90}</code></td><td>Delete photos unavailable for that long</td></tr></tbody></table></div></section>
+<section id="cmd-sched"><h2>In the scheduler</h2>
+<p>Because images are hotlinked, a photo removed by its photographer has to be taken out of
+rotation, and a photographer who renames has to be re-credited correctly.</p>
+<pre><code><span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:verify'</span>)-&gt;<span class="k">daily</span>();
+<span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:refresh'</span>)-&gt;<span class="k">weekly</span>();</code></pre></section>
+
+<section id="cmd-ci"><h2>In CI</h2>
+<pre><code>- <span class="k">name</span>: Unsplash guidelines
+  <span class="k">run</span>: php artisan unsplash:doctor --strict</code></pre>
+<p>It fails on a missing app name, an access key that is not set, storage enabled without a recorded
+permission, photos producing URLs with no <code>ixid</code>, and — under <code>--strict</code> —
+pools running low.</p></section>
+
+<section id="cmd-backfill"><h2>The backfill</h2>
+<p>A 1.x installation already holds <code>unsplash_id</code> on every row, which is all that is
+needed to rebuild it as a registry entry. Nothing you curated is lost.</p>
+<pre><code>php artisan unsplash:refresh --backfill --assign-pool=login-backgrounds</code></pre></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="performance">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Performance</h1>
+      <p class="lede">What the package does to keep your hourly budget intact and your pages fast.</p>
+      
+<section id="pf-cache"><h2>Response caching</h2>
+<p>Every <code>GET</code> is cached by endpoint and parameters. Only JSON metadata is cached —
+image bytes are never cached or stored, because they are never fetched in the first place.</p>
+<pre><code><span class="s">'cache'</span> =&gt; [
+    <span class="s">'enabled'</span> =&gt; <span class="k">true</span>,
+    <span class="s">'store'</span> =&gt; <span class="k">null</span>,      <span class="c">// null uses your default store</span>
+    <span class="s">'ttl'</span> =&gt; <span class="s">3600</span>,
+    <span class="s">'prefix'</span> =&gt; <span class="s">'unsplash'</span>,
+],</code></pre>
+<p>A repeated search costs nothing:</p>
+<pre><code><span class="fn">Unsplash</span>::<span class="k">search</span>(<span class="s">'cars'</span>)-&gt;<span class="k">perPage</span>(<span class="s">10</span>)-&gt;<span class="k">get</span>();   <span class="c">// one HTTP request</span>
+<span class="fn">Unsplash</span>::<span class="k">search</span>(<span class="s">'cars'</span>)-&gt;<span class="k">perPage</span>(<span class="s">10</span>)-&gt;<span class="k">get</span>();   <span class="c">// served from cache</span></code></pre>
+<div class="note"><b>Download events are never cached.</b> Two people choosing the same photo must
+report two events, or the photographer is undercredited. The cache is bypassed for every request to
+a <code>download_location</code>.</div>
+<pre><code>php artisan unsplash:cache-clear</code></pre></section>
+
+<section id="pf-pool"><h2>Concurrent fetches</h2>
+<p><code>photosByIds()</code> pools its requests rather than issuing them one after another, in
+batches of <code>http.concurrency</code>. Ids already in the cache are not re-fetched at all.</p>
+<pre><code>$photos = <span class="fn">Unsplash</span>::<span class="k">photosByIds</span>($ids);   <span class="c">// one pooled batch, not N round trips</span></code></pre>
+<p>It is built on Laravel's <code>Http::pool()</code>, so a slow photo does not hold up the rest of
+the batch.</p></section>
+
+<section id="pf-retry"><h2>Retries and timeouts</h2>
+<pre><code><span class="s">'http'</span> =&gt; [
+    <span class="s">'timeout'</span> =&gt; <span class="s">10</span>,
+    <span class="s">'connect_timeout'</span> =&gt; <span class="s">5</span>,
+    <span class="s">'concurrency'</span> =&gt; <span class="s">5</span>,
+    <span class="s">'retry'</span> =&gt; [<span class="s">'times'</span> =&gt; <span class="s">3</span>, <span class="s">'sleep'</span> =&gt; <span class="s">250</span>, <span class="s">'backoff'</span> =&gt; <span class="k">true</span>],
+],</code></pre>
+<div class="scroller"><table>
+<thead><tr><th>Failure</th><th>Retried?</th><th>Why</th></tr></thead><tbody>
+<tr><td>Connection error</td><td><b>yes</b></td><td>Transient; backoff doubles the wait each attempt</td></tr>
+<tr><td><code>5xx</code></td><td><b>yes</b></td><td>Unsplash's side, usually momentary</td></tr>
+<tr><td><code>4xx</code></td><td class="no">no</td><td>A malformed request will not succeed on a second attempt</td></tr>
+<tr><td>Rate limited</td><td class="no">no</td><td>The budget is already spent; retrying only spends more of it</td></tr>
+</tbody></table></div>
+<p>v1 had no timeout at all, so a hung connection blocked the worker indefinitely.</p></section>
+
+<section id="pf-rate"><h2>Rate limiting</h2>
+<p>A local limiter keeps you inside the budget Unsplash granted, and refuses the request
+<em>before</em> it is sent rather than discovering the limit remotely.</p>
+<pre><code><span class="s">'rate_limit'</span> =&gt; [
+    <span class="s">'enabled'</span> =&gt; <span class="k">true</span>,
+    <span class="s">'key'</span> =&gt; <span class="s">'unsplash-toolkit'</span>,
+    <span class="s">'max_per_hour'</span> =&gt; <span class="s">50</span>,   <span class="c">// 5000 once approved for production</span>
+],</code></pre>
+<pre><code><span class="fn">Unsplash</span>::<span class="k">throttle</span>()-&gt;<span class="k">used</span>();        <span class="c">// requests spent this window</span>
+<span class="fn">Unsplash</span>::<span class="k">throttle</span>()-&gt;<span class="k">remaining</span>();
+<span class="fn">Unsplash</span>::<span class="k">throttle</span>()-&gt;<span class="k">availableIn</span>();  <span class="c">// seconds until the window resets</span>
+
+$reported = <span class="fn">Unsplash</span>::<span class="k">rateLimit</span>();   <span class="c">// what Unsplash said on the last response</span>
+$reported?-&gt;limit;
+$reported?-&gt;remaining;
+$reported?-&gt;<span class="k">isDemo</span>();
+$reported?-&gt;<span class="k">isExhausted</span>();</code></pre>
+<pre><code>php artisan unsplash:status</code></pre>
+<p>Exceeding it raises <code>RateLimitExceededException</code>, which carries
+<code>retryAfter</code> when Unsplash sent the header.</p></section>
+
+<section id="pf-render"><h2>Why rendering is free</h2>
+<p>The hourly budget is spent when someone <em>curates</em> a photo. Selecting one from a pool reads
+your own database, so no page view ever touches the API:</p>
+<pre><code>$photo = <span class="fn">UnsplashAsset</span>::<span class="k">cachedRandom</span>(<span class="s">'login-backgrounds'</span>);
+<span class="c">// one query on a cache hit, zero HTTP requests</span></code></pre>
+<p>If you are hitting the rate limit during normal page rendering, something is calling the API on
+render — look for <code>Unsplash::random()</code> or <code>Unsplash::photo()</code> in a controller
+or Blade view.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="troubleshooting">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Troubleshooting</h1>
+      <p class="lede">The errors and symptoms you are most likely to meet, and what each one means.</p>
+      <section id="t-all"><h2>Common problems</h2><details><summary>MissingAttributionNameException</summary><div class="in"><p><code>compliance.app_name</code> is unset, or still the 1.x <code>your_app_name</code>
+placeholder. Set <code>UNSPLASH_APP_NAME</code> to your real application name: it becomes the
+<code>utm_source</code> on every credit, which the guidelines require, so the package throws rather
+than emit a credit that would not qualify.</p>
+<p>If you are upgrading, note that 1.x read this key from the wrong config path, so it was silently
+<code>null</code> the whole time — your old credits were not tagged either.</p></div></details><details><summary>HotlinkingRequiredException when calling import()</summary><div class="in"><p>Working as intended. Images must be hotlinked, so <code>import()</code> is off by default.
+Use <code>Unsplash::curate()</code> and <code>&lt;x-unsplash::image&gt;</code> instead.</p>
+<p>If Unsplash has given you written permission to store copies, set <b>both</b>
+<code>compliance.allow_local_storage</code> and
+<code>compliance.storage_permission_reference</code>. Setting only the first still throws, on
+purpose — the exception has to stay auditable.</p></div></details><details><summary>RateLimitExceededException</summary><div class="in"><p>You have spent the hourly budget. <code>php artisan unsplash:status</code> shows what is
+left and when the window resets.</p>
+<p>Demo applications get 50 requests an hour. If you are hitting that during normal page rendering,
+something is calling the API on render — look for <code>Unsplash::random()</code> or
+<code>Unsplash::photo()</code> in a controller or Blade view, and curate into a pool instead. Pool
+selection makes no API calls at all.</p></div></details><details><summary>My background disappeared / cachedRandom() returns null</summary><div class="in"><p>The pool has no <code>active</code> photos. Either nothing has been curated into that pool
+name, or <code>unsplash:verify</code> retired them because they no longer exist on Unsplash.</p>
+<pre><code>php artisan unsplash:pools</code></pre>
+<p>That shows active, unavailable and archived counts per pool. Watch for a typo in the pool name —
+<code>login-background</code> and <code>login-backgrounds</code> are two pools.</p></div></details><details><summary>Images 404 after working for months</summary><div class="in"><p>The photographer removed the photo from Unsplash. Because the guidelines require hotlinking,
+there is no local copy to fall back on. Schedule the check so it is caught before a visitor sees
+it:</p>
+<pre><code><span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:verify'</span>)-&gt;<span class="k">daily</span>();</code></pre>
+<p>Retired photos are skipped by every selection scope, so the pool simply serves another one.</p></div></details><details><summary>PhotoNotFoundException from unsplash:curate</summary><div class="in"><p>The id does not exist. Unsplash ids are short base62 strings like <code>Dwu85P9SOIk</code>,
+not the numbers in a photo's page URL slug. Copy the id from <code>php artisan unsplash:search</code>,
+or from the last path segment of the photo's Unsplash URL.</p></div></details><details><summary>The picker routes return 401, or do not exist</summary><div class="in"><p>They are guarded by <code>picker.middleware</code>, which defaults to
+<code>['web', 'auth']</code>. If your admin panel authenticates on a different guard, set the
+middleware to that panel's group.</p>
+<p>If <code>php artisan route:list</code> does not show them at all, either
+<code>picker.enabled</code> is <code>false</code>, or your routes are cached — the package skips
+registration when <code>routesAreCached()</code> is true, so run
+<code>php artisan route:clear</code>.</p></div></details><details><summary>My config changes are not taking effect</summary><div class="in"><p>Two likely causes. Run <code>php artisan config:clear</code> if the config is cached. And
+check the file name: it must be <code>config/unsplash-toolkit.php</code>. A
+<code>config/unsplash.php</code> left over from 1.x is read by nothing in 2.x — delete it.</p></div></details><details><summary>Class "Laravel\Nova\Actions\Action" not found</summary><div class="in"><p><code>Nova\Actions\CurateUnsplashPhotos</code> is an optional integration and Nova is not a
+dependency of this package. Only reference that class in applications that have Nova installed.</p></div></details></section>
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="api">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>API reference</h1>
+      <p class="lede">Every public method, what it returns, and what it does.</p>
+      <section id="a-facade"><h2>The Unsplash facade</h2><div class="scroller"><table><thead><tr><th>Method</th><th>Returns</th><th>What it does</th></tr></thead><tbody><tr><td><code>search(?string $term = null)</code></td><td><code>PendingRequest</code></td><td>Search photos</td></tr><tr><td><code>searchCollections(?string $term = null)</code></td><td><code>PendingRequest</code></td><td>Search collections</td></tr><tr><td><code>searchUsers(?string $term = null)</code></td><td><code>PendingRequest</code></td><td>Search users, raw payload</td></tr><tr><td><code>photos()</code></td><td><code>PendingRequest</code></td><td>List photos</td></tr><tr><td><code>photo(string $id)</code></td><td><code>Photo</code></td><td>One photo</td></tr><tr><td><code>photosByIds(array $ids)</code></td><td><code>PhotoCollection</code></td><td>Several photos, pooled concurrently</td></tr><tr><td><code>random()</code></td><td><code>PendingRequest</code></td><td>Random photos</td></tr><tr><td><code>photoStatistics(string $id)</code></td><td><code>PendingRequest</code></td><td>A photo's statistics, raw payload</td></tr><tr><td><code>user(string $username)</code></td><td><code>PendingRequest</code></td><td>A user profile, raw payload</td></tr><tr><td><code>userPhotos(string $username)</code></td><td><code>PendingRequest</code></td><td>A user's photos</td></tr><tr><td><code>userLikes(string $username)</code></td><td><code>PendingRequest</code></td><td>A user's likes</td></tr><tr><td><code>userCollections(string $username)</code></td><td><code>PendingRequest</code></td><td>A user's collections</td></tr><tr><td><code>collections()</code></td><td><code>PendingRequest</code></td><td>List collections</td></tr><tr><td><code>collection(string $id)</code></td><td><code>CollectionResource</code></td><td>One collection</td></tr><tr><td><code>collectionPhotos(string $id)</code></td><td><code>PendingRequest</code></td><td>Photos in a collection</td></tr><tr><td><code>stats()</code></td><td><code>Stats</code></td><td>Unsplash platform statistics</td></tr><tr><td><code>curate(Photo $photo, ?string $pool, ?Model $curatedBy)</code></td><td><code>UnsplashAsset</code></td><td>Approve a photo, reporting the download event</td></tr><tr><td><code>curateMany(iterable $photos, ?string $pool, ?Model $curatedBy)</code></td><td><code>Collection</code></td><td>Approve several chosen photos</td></tr><tr><td><code>curateCollection(string $id, ?string $pool, int $perPage = 30)</code></td><td><code>Collection</code></td><td>Approve an Unsplash collection</td></tr><tr><td><code>trackDownload(Photo $photo)</code></td><td><code>void</code></td><td>Report a download event by hand</td></tr><tr><td><code>refresh(UnsplashAsset $asset)</code></td><td><code>UnsplashAsset</code></td><td>Re-fetch metadata, retiring removed photos</td></tr><tr><td><code>fromPool(?string $pool = null)</code></td><td><code>?UnsplashAsset</code></td><td>One cached random photo from a pool</td></tr><tr><td><code>import(Photo $photo, Size $size, ?string $pool)</code></td><td><code>UnsplashAsset</code></td><td>Download bytes — gated</td></tr><tr><td><code>rateLimit()</code></td><td><code>?RateLimit</code></td><td>What Unsplash reported on the last response</td></tr><tr><td><code>throttle()</code></td><td><code>Throttle</code></td><td>The local rate limiter</td></tr><tr><td><code>compliance()</code></td><td><code>Compliance</code></td><td>The guideline guard</td></tr><tr><td><code>config()</code></td><td><code>Config</code></td><td>Typed configuration</td></tr><tr><td><code>client()</code></td><td><code>UnsplashClient</code></td><td>The underlying API client</td></tr><tr><td><code>request(string $endpoint, string $shape = 'photos')</code></td><td><code>PendingRequest</code></td><td>Any endpoint not covered above</td></tr><tr><td><code>fake(?FakeUnsplash $fake = null)</code></td><td><code>FakeUnsplash</code></td><td>Replace the client in tests</td></tr></tbody></table></div></section><section id="a-builder"><h2>PendingRequest</h2><p>Every modifier returns a new instance, so a base request can be branched safely.</p><div class="scroller"><table><thead><tr><th>Method</th><th>Parameter sent</th></tr></thead><tbody><tr><td><code>page(int)</code></td><td><code>page</code></td></tr><tr><td><code>perPage(int)</code></td><td><code>per_page</code></td></tr><tr><td><code>count(int)</code></td><td><code>count</code></td></tr><tr><td><code>term(string)</code></td><td><code>query</code></td></tr><tr><td><code>orderBy(OrderBy|string)</code></td><td><code>order_by</code></td></tr><tr><td><code>orientation(Orientation|string)</code></td><td><code>orientation</code></td></tr><tr><td><code>color(Color|string)</code></td><td><code>color</code></td></tr><tr><td><code>contentFilter(ContentFilter|string)</code></td><td><code>content_filter</code></td></tr><tr><td><code>collections(array|string)</code></td><td><code>collections</code></td></tr><tr><td><code>username(string)</code></td><td><code>username</code></td></tr><tr><td><code>featured(bool = true)</code></td><td><code>featured</code></td></tr><tr><td><code>withQuery(string, mixed)</code></td><td>anything</td></tr><tr><td><code>get()</code></td><td>executes, returns the shaped result</td></tr><tr><td><code>first()</code></td><td>executes, returns <code>?Photo</code></td></tr><tr><td><code>toArray()</code></td><td>executes, returns the raw payload</td></tr><tr><td><code>query() / endpoint()</code></td><td>inspect without sending</td></tr></tbody></table></div></section><section id="a-model"><h2>UnsplashAsset</h2><div class="scroller"><table><thead><tr><th>Method</th><th>Returns</th><th>What it does</th></tr></thead><tbody><tr><td><code>random(?string $pool = null)</code></td><td><code>?static</code></td><td>One random active photo</td></tr><tr><td><code>randomOrFail(?string $pool = null)</code></td><td><code>static</code></td><td>The same, throwing <code>PoolDepletedException</code> when empty</td></tr><tr><td><code>cachedRandom(?string $pool = null, ?int $ttl = null)</code></td><td><code>?static</code></td><td>The same, cached for <code>pools.selection_ttl</code></td></tr><tr><td><code>scopePool(?string $pool = null)</code></td><td><code>scope</code></td><td>Restrict to a pool</td></tr><tr><td><code>scopeActive()</code></td><td><code>scope</code></td><td>Restrict to servable photos</td></tr><tr><td><code>url(Size, ?int $width, ?int $height, ?int $quality, ?string $format, ?string $fit, ?int $dpr)</code></td><td><code>string</code></td><td>A hotlinked URL</td></tr><tr><td><code>rawUrl(Size $size = Size::Regular)</code></td><td><code>string</code></td><td>The URL Unsplash returned, untouched</td></tr><tr><td><code>srcset(?array $widths, bool $preserveAspectRatio = true, ?int $quality)</code></td><td><code>string</code></td><td>A responsive srcset</td></tr><tr><td><code>aspectRatio()</code></td><td><code>?float</code></td><td>Width over height</td></tr><tr><td><code>attribution()</code></td><td><code>Attribution</code></td><td>The photographer credit</td></tr><tr><td><code>alt()</code></td><td><code>string</code></td><td>The best available alternative text</td></tr><tr><td><code>placeholderColor()</code></td><td><code>string</code></td><td>The dominant colour, or the configured fallback</td></tr><tr><td><code>isSelectable()</code></td><td><code>bool</code></td><td>Whether it may still be served</td></tr><tr><td><code>unsplashUrl()</code></td><td><code>string</code></td><td>The photo's page on Unsplash</td></tr><tr><td><code>curatedBy()</code></td><td><code>MorphTo</code></td><td>The model that approved this photo</td></tr><tr><td><code>attachedTo(string $related)</code></td><td><code>MorphToMany</code></td><td>Models of a type this photo is attached to</td></tr><tr><td><code>detachAll()</code></td><td><code>void</code></td><td>Remove every attachment</td></tr><tr><td><code>attributesFrom(Photo $photo)</code></td><td><code>array</code></td><td>The attributes describing a photo</td></tr></tbody></table></div></section>
+<section id="a-dto"><h2>Data objects</h2>
+<p>All readonly, all implementing <code>Arrayable</code>, <code>ArrayAccess</code>,
+<code>Jsonable</code>, <code>JsonSerializable</code> and <code>Stringable</code> where it makes
+sense.</p>
+<div class="scroller"><table><thead><tr><th>Class</th><th>Carries</th></tr></thead><tbody>
+<tr><td><code>Photo</code></td><td><code>id</code>, <code>urls</code>, <code>author</code>, <code>downloadLocation</code>, <code>width</code>, <code>height</code>, <code>color</code>, <code>blurHash</code>, <code>description</code>, <code>altDescription</code>, <code>tags</code>, <code>likes</code>, <code>raw</code></td></tr>
+<tr><td><code>Author</code></td><td><code>id</code>, <code>username</code>, <code>name</code>, <code>link</code>, <code>portfolioUrl</code>, <code>bio</code>, <code>location</code></td></tr>
+<tr><td><code>PhotoCollection</code></td><td>A Laravel collection of <code>Photo</code>, plus <code>ids()</code></td></tr>
+<tr><td><code>SearchResult</code></td><td><code>photos</code>, <code>total</code>, <code>totalPages</code>, <code>page</code>, <code>hasMorePages()</code></td></tr>
+<tr><td><code>CollectionResource</code></td><td><code>id</code>, <code>title</code>, <code>totalPhotos</code>, <code>curator</code>, <code>coverPhoto</code></td></tr>
+<tr><td><code>Attribution</code></td><td><code>authorUrl()</code>, <code>unsplashUrl()</code>, <code>toText()</code>, <code>toHtml()</code>, <code>toHtmlString()</code></td></tr>
+<tr><td><code>RateLimit</code></td><td><code>limit</code>, <code>remaining</code>, <code>used()</code>, <code>isDemo()</code>, <code>isExhausted()</code></td></tr>
+<tr><td><code>Stats</code></td><td><code>photos</code>, <code>downloads</code>, <code>views</code>, <code>photographers</code></td></tr>
+</tbody></table></div></section>
+
+<section id="a-enums"><h2>Enums</h2>
+<div class="scroller"><table><thead><tr><th>Enum</th><th>Cases</th></tr></thead><tbody>
+<tr><td><code>Size</code></td><td><code>Raw</code>, <code>Full</code>, <code>Regular</code>, <code>Small</code>, <code>Thumb</code></td></tr>
+<tr><td><code>Orientation</code></td><td><code>Landscape</code>, <code>Portrait</code>, <code>Squarish</code></td></tr>
+<tr><td><code>Color</code></td><td><code>BlackAndWhite</code>, <code>Black</code>, <code>White</code>, <code>Yellow</code>, <code>Orange</code>, <code>Red</code>, <code>Purple</code>, <code>Magenta</code>, <code>Green</code>, <code>Teal</code>, <code>Blue</code></td></tr>
+<tr><td><code>OrderBy</code></td><td><code>Latest</code>, <code>Oldest</code>, <code>Popular</code>, <code>Views</code>, <code>Downloads</code>, <code>Relevant</code></td></tr>
+<tr><td><code>ContentFilter</code></td><td><code>Low</code>, <code>High</code></td></tr>
+<tr><td><code>AssetStatus</code></td><td><code>Active</code>, <code>Unavailable</code>, <code>Archived</code></td></tr>
+</tbody></table></div></section>
+
+<section id="a-events"><h2>Events and exceptions</h2>
+<div class="scroller"><table><thead><tr><th>Event</th><th>Fired when</th><th>Properties</th></tr></thead><tbody>
+<tr><td><code>PhotoCurated</code></td><td>A photo is approved</td><td><code>$asset</code></td></tr>
+<tr><td><code>PhotoUnavailable</code></td><td>A photo no longer resolves</td><td><code>$asset</code>, <code>$reason</code></td></tr>
+<tr><td><code>PoolDepleted</code></td><td>A pool drops below <code>pools.min_size</code></td><td><code>$pool</code>, <code>$remaining</code>, <code>$minimum</code></td></tr>
+</tbody></table></div>
+<p>Every exception extends <code>UnsplashException</code>:
+<code>MissingAccessKeyException</code>, <code>MissingAttributionNameException</code>,
+<code>HotlinkingRequiredException</code>, <code>RateLimitExceededException</code>,
+<code>PhotoNotFoundException</code>, <code>PoolDepletedException</code>,
+<code>DownloadFailedException</code>.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="compliance">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Compliance</h1>
+      <p class="lede">The Unsplash API Guidelines are enforced by the package, not left to the caller. Each rule has a test named after it.</p>
+      <section id="c-rules"><h2>The nine rules</h2><div class="scroller"><table><thead><tr><th>#</th><th>Rule</th><th>How it is enforced</th></tr></thead><tbody><tr><td><b>C1</b></td><td>Hotlink the URLs under <code>photo.urls</code></td><td>The default and only zero-config path; the registry stores URLs, not files</td></tr><tr><td><b>C2</b></td><td>Do not keep copies without permission</td><td><code>import()</code> throws unless permission is configured <em>and</em> recorded</td></tr><tr><td><b>C3</b></td><td>Report a download event</td><td>Automatic on curation, to <code>links.download_location</code></td></tr><tr><td><b>C4</b></td><td>Keep <code>ixid</code> on every manipulation</td><td>URLs are rebuilt by merging query strings, so it survives by construction</td></tr><tr><td><b>C5</b></td><td>Credit the photographer and Unsplash</td><td>Escaped, UTM-tagged, rendered by default, throws without an app name</td></tr><tr><td><b>C6</b></td><td>Stay inside the rate limit</td><td>Local throttle; a rate-limited response is never retried</td></tr><tr><td><b>C7</b></td><td>Keep your keys confidential</td><td>Header auth, redacted from errors, picker proxies server side</td></tr><tr><td><b>C8</b></td><td>Non-automated, authentic use</td><td>No entry point fetches and stores an arbitrary number of photos</td></tr><tr><td><b>C9</b></td><td>Do not replicate Unsplash</td><td>The picker chooses an image for a record; it is not a browsable gallery</td></tr></tbody></table></div><p>Three more are yours to honour, because no package can check them: do not put "Unsplash" in your application's name or use their logo as your icon; do not sell unaltered Unsplash photos; and do not make users register separately to use the integration.</p></section>
+<section id="c-doctor"><h2>The doctor command</h2>
+<pre><code>php artisan unsplash:doctor
+php artisan unsplash:doctor --strict   <span class="c"># warnings fail too</span></code></pre>
+<pre><code>  <span class="c">Rule                Status   Detail</span>
+  C7 credentials      <span class="k">OK</span>       Access key abcd********op is set server side.
+  C5 attribution      <span class="k">OK</span>       utm_source is "Your Application".
+  C1 hotlinking       <span class="k">OK</span>       Local storage is disabled, so images are served by Unsplash.
+  C4 tracking         <span class="k">OK</span>       All 24 sampled photos keep their ixid when resized.
+  C3 download events  <span class="k">OK</span>       All 24 curated photos carry a download location.
+  C6 rate limit       <span class="k">OK</span>       Capped at 50 requests per hour.
+  Pool health         <span class="k">OK</span>       2 pools checked.</code></pre>
+<p>It exits non-zero on a violation, so it can gate a deploy.</p></section>
+
+<section id="c-tests"><h2>The compliance suite</h2>
+<p><code>tests/Compliance</code> holds one file per rule. It asserts that hotlink URLs come back
+unmodified, that <code>ixid</code> survives every resize and srcset entry, that curation pings
+<code>links.download_location</code> before writing a row, that attribution escapes a malicious
+author name and carries both UTM parameters, that a rate-limited response is not retried, and that
+no bulk-harvesting entry point exists.</p>
+<pre><code><span class="fn">it</span>(<span class="s">'refuses to download image bytes by default'</span>, <span class="k">function</span> () {
+    <span class="fn">Unsplash</span>::<span class="k">fake</span>();
+
+    <span class="fn">Unsplash</span>::<span class="k">import</span>(<span class="fn">Photo</span>::<span class="k">fromResponse</span>(<span class="fn">FakeUnsplash</span>::<span class="k">photoPayload</span>()));
+})-&gt;<span class="k">throws</span>(<span class="fn">HotlinkingRequiredException</span>::<span class="k">class</span>, <span class="s">'hotlinked image URLs'</span>);</code></pre></section>
+
+<section id="c-storage"><h2>Storing image files</h2>
+<p>Keeping copies is only permissible with <b>written permission from Unsplash</b>. If you have it,
+both keys are required — enabling the flag alone still throws, so the exception stays auditable.</p>
+<pre><code><span class="s">'compliance'</span> =&gt; [
+    <span class="s">'allow_local_storage'</span> =&gt; <span class="k">true</span>,
+    <span class="s">'storage_permission_reference'</span> =&gt; <span class="s">'UNSPLASH-1234'</span>,
+],</code></pre>
+<p>The transfer is then streamed to a temporary file and written with
+<code>Storage::writeStream()</code>, so a full-resolution photo does not have to fit in
+<code>memory_limit</code>. File names are derived from the photo id and size, so importing twice
+overwrites rather than probing the disk for a free name.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="security">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Security</h1>
+      <p class="lede">The package sends your access key to one host and renders third-party strings into your pages. Both are handled deliberately.</p>
+      
+<section id="s-model"><h2>The threat model</h2>
+<div class="grid2">
+<div class="card"><div class="n">Your credentials</div><p>An access key that, if leaked, lets anyone
+spend your API budget or impersonate your application to Unsplash.</p></div>
+<div class="card"><div class="n">Third-party strings</div><p>Author names, descriptions and profile
+links come from an API you do not control and are rendered as HTML.</p></div>
+</div></section>
+
+<section id="s-mitigations"><h2>What the package does about it</h2>
+<ul>
+<li><b>The access key never reaches a browser.</b> It is sent as an <code>Authorization</code>
+header, never a query parameter, and the picker exists precisely so a client-side field can search
+without it. An arch test asserts no shipped view references the config key.</li>
+<li><b>Credentials are redacted from exceptions and logs.</b> An upstream error body that happens to
+contain your key is scrubbed before it is thrown.</li>
+<li><b>Author names and links are escaped.</b> <code>Attribution</code> escapes both and adds
+<code>rel="noopener noreferrer"</code>. The 1.x <code>getFullCopyrightLink()</code> interpolated them
+raw, which was an XSS vector.</li>
+<li><b>Picker input is validated.</b> Search terms are length-bounded, <code>per_page</code> is
+capped at 30, and a curate request may name at most 30 ids, so the proxy cannot be used to fan out
+requests against your API budget.</li>
+<li><b>The picker routes are authenticated by default.</b> They proxy your API quota; leaving them
+open would let anyone spend it.</li>
+<li><b>The registry stores no binary content</b>, so on the hotlinking default there is no upload
+path and nothing user-supplied is written to a disk.</li>
+</ul></section>
+
+<section id="s-trade"><h2>The trade, stated plainly</h2>
+<div class="note warn">Images are loaded from <code>images.unsplash.com</code> at render time, so
+your pages depend on a third-party CDN being up, and a visitor's browser makes a request to
+Unsplash. That is what the API Guidelines require. If your threat model forbids third-party image
+hosts, this package is not the right fit.</div></section>
+
+<section id="s-report"><h2>Reporting a vulnerability</h2>
+<p>Please review the project's
+<a href="https://github.com/gabrielesbaiz/unsplash-toolkit/security/policy" target="_blank"
+rel="noopener">security policy</a>. Do not open a public issue.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="upgrade">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Upgrading from 1.x</h1>
+      <p class="lede">Version 2 is a rewrite. The public API changed, and so did what the package stores.</p>
+      
+<section id="u-why"><h2>Why the API changed</h2>
+<p>Three defects in 1.x could not be fixed without breaking the surface:</p>
+<ul>
+<li>Every config read used <code>config('unsplash.*')</code> while the published file was
+<code>unsplash-toolkit.php</code>, so the access key was always <code>null</code> and the package
+threw on construction.</li>
+<li>The facade cached one instance whose <code>$query</code> was never reset, so parameters leaked
+between calls: <code>search()-&gt;term('cats')</code> followed by <code>photos()</code> sent
+<code>photos?query=cats</code>.</li>
+<li><code>toJson(): array</code> returned a <code>stdClass</code>, and <code>store(): string</code>
+returned a model. Both raised a <code>TypeError</code> on the documented happy path.</li>
+</ul></section>
+
+<section id="u-storage"><h2>Why storage changed</h2>
+<p>The guidelines state that all API uses must hotlink the URLs returned under
+<code>photo.urls</code>. <code>store()</code> copied the bytes to your disk and served them from
+there, which is the opposite. v2 hotlinks by default and keeps a curated registry instead: you
+still decide exactly which photos appear, but Unsplash serves them.</p></section>
+
+<section id="u-steps"><h2>Step by step</h2>
+<h3>1 · Update the config</h3>
+<p>Delete any hand-made <code>config/unsplash.php</code> you created to work around the key
+mismatch, then publish the real file:</p>
+<pre><code>php artisan vendor:publish --tag=unsplash-toolkit-config --force</code></pre>
+<div class="scroller"><table><thead><tr><th>1.x</th><th>2.x</th></tr></thead><tbody>
+<tr><td><code>UNSPLASH_ACCESS_KEY</code></td><td>unchanged</td></tr>
+<tr><td><code>UNSPLASH_APP_NAME</code></td><td>unchanged, but now required and actually read</td></tr>
+<tr><td><code>UNSPLASH_STORE_IN_DATABASE</code></td><td class="no">removed: photos are always recorded</td></tr>
+<tr><td><code>UNSPLASH_STORAGE_DISK</code></td><td>only used on the gated storage path</td></tr>
+</tbody></table></div>
+
+<h3>2 · Run the migrations</h3>
+<pre><code>php artisan vendor:publish --tag=unsplash-toolkit-migrations
+php artisan migrate</code></pre>
+<p><code>upgrade_unsplash_tables_to_v2</code> is additive. It adds the registry columns, gives
+<code>unsplashables</code> the primary key and indexes it shipped without, and renames the
+non-idiomatic <code>unsplashables_id</code> / <code>unsplashables_type</code> columns to
+<code>unsplashable_id</code> / <code>unsplashable_type</code>.</p>
+
+<h3>3 · Backfill the registry</h3>
+<div class="note">Existing rows already hold <code>unsplash_id</code>, which is all that is needed to
+rebuild them. <b>Nothing you curated is lost.</b></div>
+<pre><code>php artisan unsplash:refresh --backfill --assign-pool=default</code></pre>
+
+<h3>4 · Update your calls</h3>
+<div class="scroller"><table><thead><tr><th>1.x</th><th>2.x</th></tr></thead><tbody>
+<tr><td><code>UnsplashToolkit::search()-&gt;term('x')-&gt;toJson()</code></td><td><code>Unsplash::search('x')-&gt;get()</code></td></tr>
+<tr><td><code>UnsplashToolkit::photo($id)-&gt;toJson()</code></td><td><code>Unsplash::photo($id)</code></td></tr>
+<tr><td><code>UnsplashToolkit::randomPhoto()-&gt;term('x')-&gt;toJson()</code></td><td><code>Unsplash::random()-&gt;term('x')-&gt;get()</code></td></tr>
+<tr><td><code>UnsplashToolkit::collectionsList()-&gt;toJson()</code></td><td><code>Unsplash::collections()-&gt;get()</code></td></tr>
+<tr><td><code>UnsplashToolkit::showCollection($id)-&gt;toJson()</code></td><td><code>Unsplash::collection($id)</code></td></tr>
+<tr><td><code>UnsplashToolkit::totalStats()-&gt;toJson()</code></td><td><code>Unsplash::stats()</code></td></tr>
+<tr><td><code>UnsplashToolkit::trackPhotoDownload($id)</code></td><td>automatic on <code>Unsplash::curate()</code></td></tr>
+<tr><td><code>$result['urls']['regular']</code></td><td><code>$photo-&gt;url(Size::Regular)</code></td></tr>
+<tr><td><code>$result['user']['name']</code></td><td><code>$photo-&gt;author-&gt;name</code></td></tr>
+<tr><td><code>-&gt;store(null, 'regular')</code></td><td><code>Unsplash::curate($photo, pool: '…')</code></td></tr>
+<tr><td><code>$asset-&gt;getFullCopyrightLink()</code></td><td><code>&lt;x-unsplash::attribution :asset="$asset" /&gt;</code></td></tr>
+<tr><td><code>Traits\HasUnsplashables</code></td><td><code>Concerns\HasUnsplashables</code></td></tr>
+<tr><td><code>Facades\UnsplashToolkit</code></td><td><code>Facades\Unsplash</code></td></tr>
+</tbody></table></div>
+
+<h3>5 · Serve hotlinked images</h3>
+<pre><code><span class="c">- return redirect()-&gt;away(Storage::disk('wallpapers')-&gt;url($wallpaper-&gt;name));</span>
+<span class="k">+ return redirect()-&gt;away($wallpaper-&gt;url(width: 1920, quality: 80));</span></code></pre>
+
+<h3>6 · Schedule the health checks</h3>
+<pre><code><span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:verify'</span>)-&gt;<span class="k">daily</span>();
+<span class="fn">Schedule</span>::<span class="k">command</span>(<span class="s">'unsplash:refresh'</span>)-&gt;<span class="k">weekly</span>();</code></pre>
+
+<h3>7 · Check your work</h3>
+<pre><code>php artisan unsplash:doctor</code></pre></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="changelog">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Changelog</h1>
+      <p class="lede">All notable changes to <code>unsplash-toolkit</code>.</p>
+      
+<section id="ch-200"><h2>2.0.0 — 2026-09-28</h2>
+<p>A rewrite. See <a href="#/upgrade">Upgrading from 1.x</a> for the migration path.</p>
+<h3>Fixed</h3>
+<ul>
+<li>The package could not run at all: every config read used <code>config('unsplash.*')</code> while
+the published file was <code>unsplash-toolkit.php</code>, so the access key was always
+<code>null</code> and the constructor threw on every instantiation.</li>
+<li><code>toJson(): array</code> returned a <code>stdClass</code> because <code>json_decode</code>
+was called without <code>true</code>, raising a <code>TypeError</code> on the documented happy path.</li>
+<li><code>store(): string</code> returned an <code>UnsplashAsset</code> when
+<code>store_in_database</code> was on.</li>
+<li>Query parameters leaked between calls, because the facade cached one instance whose
+<code>$query</code> was never reset.</li>
+<li><code>HasUnsplashables::boot()</code> overrode the host model's own <code>boot()</code>; it is
+now <code>bootHasUnsplashables()</code>.</li>
+<li><code>getFullCopyrightLink()</code> interpolated third-party author names and links into HTML
+unescaped.</li>
+<li><code>UnsplashAsset::assets(Model $model)</code> was a relation method taking an argument, so it
+could not be eager-loaded.</li>
+<li>The <code>unsplashables</code> table shipped with no primary key and no indexes.</li>
+<li><code>unsplash_id</code> was typed <code>uuid</code>, which fails outright on PostgreSQL;
+Unsplash ids are short base62 strings.</li>
+<li>The <code>php</code> constraint <code>^7.3,^8.0|^8.1|…</code> was an empty set.</li>
+</ul>
+<h3>Added</h3>
+<ul>
+<li>Curated pools: approve photos into named sets and select from your own database, with no API
+calls at render time.</li>
+<li>Readonly DTOs (<code>Photo</code>, <code>Author</code>, <code>SearchResult</code>,
+<code>Attribution</code>, <code>RateLimit</code>) and enums (<code>Size</code>,
+<code>Orientation</code>, <code>Color</code>, <code>OrderBy</code>, <code>AssetStatus</code>).</li>
+<li>Response caching, retries with exponential backoff, timeouts, rate-limit handling and concurrent
+batch fetches.</li>
+<li><code>&lt;x-unsplash::image&gt;</code> and <code>&lt;x-unsplash::attribution&gt;</code> Blade
+components.</li>
+<li>A picker proxy route that keeps the access key server side, returning layout metadata (aspect
+ratio, dominant colour, blurhash) and pre-tagged attribution so a client-side field can credit
+photographers correctly, plus the primary keys a form field attaches to a record.</li>
+<li>Commands: <code>search</code>, <code>curate</code>, <code>pools</code>, <code>verify</code>,
+<code>refresh</code>, <code>status</code>, <code>doctor</code>, <code>cache-clear</code>,
+<code>prune</code>.</li>
+<li><code>Unsplash::fake()</code> and a compliance test suite covering each guideline.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li>Images are hotlinked by default, as the Unsplash API Guidelines require. Downloading bytes to a
+local disk is now gated behind explicit permission.</li>
+<li>Download events use <code>photo.links.download_location</code> rather than a hand-built URL, so
+the <code>ixid</code> is no longer dropped.</li>
+<li>Attribution requires an application name; a missing or placeholder value throws rather than
+emitting a credit that does not qualify.</li>
+<li>The facade is now <code>Facades\Unsplash</code>, and the trait moved to
+<code>Concerns\HasUnsplashables</code>.</li>
+<li>Laravel's HTTP client replaces raw Guzzle, so <code>Http::fake()</code> works in tests.</li>
+</ul></section>
+
+<section id="ch-100"><h2>1.0.0 — 2025-03-04</h2>
+<p>Initial release. Forked from
+<a href="https://github.com/marksitko/laravel-unsplash" target="_blank" rel="noopener">marksitko/laravel-unsplash</a>.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+
+<section class="page hidden" id="project">
+  <div class="mx docs">
+    
+      <nav class="sidenav" aria-label="Documentation">
+        <h5>Getting started</h5>
+        <ul>
+          <li><a href="#/intro">Introduction</a></li>
+          <li><a href="#/install">Installation</a></li>
+          <li><a href="#/configuration">Configuration</a></li>
+        </ul>
+        <h5>Usage</h5>
+        <ul>
+          <li><a href="#/guide">Guide</a></li>
+          <li><a href="#/recipes">Recipes</a></li>
+          <li><a href="#/commands">Commands</a></li>
+          <li><a href="#/performance">Performance</a></li>
+          <li><a href="#/troubleshooting">Troubleshooting</a></li>
+        </ul>
+        <h5>Reference</h5>
+        <ul>
+          <li><a href="#/api">API reference</a></li>
+          <li><a href="#/compliance">Compliance</a></li>
+        </ul>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#/security">Security</a></li>
+          <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+          <li><a href="#/changelog">Changelog</a></li>
+          <li><a href="#/project">Project &amp; licence</a></li>
+          <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+        </ul>
+      </nav>
+
+    <div class="body">
+      <h1>Project &amp; licence</h1>
+      <p class="lede">How to contribute, how the suite is run, who this is built on, and the licence in full.</p>
+      
+<section id="p-contributing"><h2>Contributing</h2>
+<p>Pull requests are welcome. A change is ready when three commands pass — they are the contract,
+and CI runs all three on every push.</p>
+<pre><code>composer test      <span class="c"># pest</span>
+composer analyse   <span class="c"># phpstan level 6</span>
+composer format    <span class="c"># pint</span></code></pre>
+<p>If a change touches behaviour the Unsplash API Guidelines govern, it needs a test in
+<code>tests/Compliance</code> named after the rule. That directory is what keeps the rules from
+rotting, so a change that weakens it will be asked for a test rather than merged.</p></section>
+
+<section id="p-tests"><h2>Running the suite</h2>
+<pre><code>git clone https://github.com/gabrielesbaiz/unsplash-toolkit
+cd unsplash-toolkit
+composer install
+composer test</code></pre>
+<p>The suite runs against SQLite in memory and never touches the network: every test drives either
+<code>Unsplash::fake()</code> or <code>Http::fake()</code>. No API key is required to run it.</p>
+<p>GitHub Actions runs the tests across PHP 8.2–8.4 and Laravel 10–12, plus PHPStan and Pint, on
+every push.</p></section>
+
+<section id="p-credits"><h2>Credits</h2>
+<p>Written and maintained by
+<a href="https://github.com/gabrielesbaiz" target="_blank" rel="noopener">Gabriele Sbaiz</a>, with
+thanks to
+<a href="https://github.com/gabrielesbaiz/unsplash-toolkit/graphs/contributors" target="_blank"
+rel="noopener">everyone who has contributed</a>.</p>
+<p>The 1.x line was forked from
+<a href="https://github.com/marksitko/laravel-unsplash" target="_blank" rel="noopener">marksitko/laravel-unsplash</a>
+by <a href="https://github.com/marksitko" target="_blank" rel="noopener">Mark Sitko</a>. 2.0 is a
+rewrite, but the idea of a fluent Unsplash client for Laravel started there.</p>
+<p>It stands on work this package does not contain: Laravel, and
+<a href="https://github.com/spatie/laravel-package-tools" target="_blank" rel="noopener">spatie/laravel-package-tools</a>.
+Photos come from the photographers on
+<a href="https://unsplash.com?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank"
+rel="noopener">Unsplash</a>, who make them available for free.</p></section>
+
+<section id="p-disclaimer"><h2>Disclaimer</h2>
+<div class="note">This package is provided as is. It enforces the Unsplash API Guidelines as they
+were published when it was written, and the compliance checks are a good-faith implementation rather
+than legal advice or an approval from Unsplash. The guidelines can change, and terms for your
+application are between you and Unsplash — reading them, and keeping your usage within them, remains
+the deploying application's responsibility.</div></section>
+
+<section id="p-licence"><h2>Licence</h2>
+<p>MIT, in full:</p>
+<pre><code>The MIT License (MIT)
+
+Copyright (c) Gabriele Sbaiz &lt;gabriele@sbaiz.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</code></pre>
+<p>The MIT licence's warranty disclaimer and limitation of liability apply in full, alongside the
+disclaimer above.</p></section>
+
+    </div>
+    <aside class="onthispage"><h5>On this page</h5><ul class="toc"></ul></aside>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="mx">
+    <div class="fcols">
+      <div><h5>Package</h5><ul>
+        <li><a href="https://github.com/gabrielesbaiz/unsplash-toolkit" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://packagist.org/packages/gabrielesbaiz/unsplash-toolkit" target="_blank" rel="noopener">Packagist</a></li>
+        <li><a href="#/changelog">Changelog</a></li>
+      </ul></div>
+      <div><h5>Documentation</h5><ul>
+        <li><a href="#/intro">Introduction</a></li>
+        <li><a href="#/install">Installation</a></li>
+        <li><a href="#/configuration">Configuration</a></li>
+        <li><a href="#/guide">Guide</a></li>
+      </ul></div>
+      <div><h5>Reference</h5><ul>
+        <li><a href="#/api">API reference</a></li>
+        <li><a href="#/commands">Commands</a></li>
+        <li><a href="#/compliance">Compliance</a></li>
+        <li><a href="#/recipes">Recipes</a></li>
+        <li><a href="#/performance">Performance</a></li>
+      </ul></div>
+      <div><h5>Project</h5><ul>
+        <li><a href="#/security">Security policy</a></li>
+        <li><a href="#/upgrade">Upgrading from 1.x</a></li>
+        <li><a href="#/project">Project &amp; licence</a></li>
+        <li><a href="https://github.com/sponsors/gabrielesbaiz" target="_blank" rel="noopener">Sponsor</a></li>
+      </ul></div>
+    </div>
+    <div class="photocredits">
+      <h5>Photographs on this page</h5>
+      <p><a href="https://unsplash.com/@kic_mike?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Michael Scott</a> · <a href="https://unsplash.com/@akshat_jhingran?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Akshat Jhingran</a> · <a href="https://unsplash.com/@jobsavelsberg?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Job Savelsberg</a> · <a href="https://unsplash.com/@chloeforbesk?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Chloë Forbes-Kindlen</a> · <a href="https://unsplash.com/@anuomar?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Anukrati Omar</a> · <a href="https://unsplash.com/@photosoflogan?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Logan Gutierrez</a> · <a href="https://unsplash.com/@rundachoo?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">runda choo</a> · <a href="https://unsplash.com/@anandass?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">DD GR</a> · <a href="https://unsplash.com/@lucaakalu?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Lu</a> · <a href="https://unsplash.com/@pwuthrich?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Paul Wuthrich</a> · <a href="https://unsplash.com/@suicide_chewbacca?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral" target="_blank" rel="noopener">Ashwini Chaudhary(Monty)</a> — all on
+        <a href="https://unsplash.com?utm_source=UnsplashToolkit+docs&amp;utm_medium=referral"
+           target="_blank" rel="noopener">Unsplash</a>.</p>
+      <p class="small">Every photograph here is hotlinked straight from Unsplash, resized through its own image parameters with the tracking parameter intact — exactly what this package does for you.</p>
+    </div>
+    <div class="fbase">
+      <span>MIT licensed · Built by Gabriele Sbaiz</span>
+      <span>Photos remain the work of the photographers on Unsplash</span>
+    </div>
+  </div>
+</footer>
+<script>const PHOTOS=[{"id":"iYw4K_akX_U","author":"Michael Scott","username":"kic_mike","color":"#262626","w":4000,"h":3000,"blur":"LYCZhV%Lfkof~qxtoeof%Madjsay","alt":"aerial view of road between trees","small":"https://images.unsplash.com/photo-1599818870786-636f668088eb?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1599818870786-636f668088eb?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"WSa-PwjyzUw","author":"Akshat Jhingran","username":"akshat_jhingran","color":"#f3f3f3","w":6000,"h":4000,"blur":"L,GSAc%LM{of~qxuRjj[xvt7t6az","alt":"Winding mountain road at sunrise with sunbeams","small":"https://images.unsplash.com/photo-1764694875393-084fc80610ce?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwyfHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1764694875393-084fc80610ce?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwyfHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"4_eSFrzxDUM","author":"Job Savelsberg","username":"jobsavelsberg","color":"#262626","w":5857,"h":3905,"blur":"LoIhBMsVs.Wq~qxaRjkC%g9aj[s:","alt":"a dirt road with a mountain in the background","small":"https://images.unsplash.com/photo-1675110972320-177dafed3cce?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwzfHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1675110972320-177dafed3cce?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwzfHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"0Gqo9XYug2s","author":"Chlo\u00eb Forbes-Kindlen","username":"chloeforbesk","color":"#262626","w":4256,"h":2832,"blur":"LrC7smROaxof.AodWBj[M|tRaxay","alt":"Curved highway leads to a bridge with dark hills","small":"https://images.unsplash.com/photo-1782784228330-444afe53c3d8?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw0fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1782784228330-444afe53c3d8?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw0fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"9yOAzAsxmU8","author":"Job Savelsberg","username":"jobsavelsberg","color":"#262626","w":5818,"h":3879,"blur":"LTGuXf-p9F?H_NbbM_xux]E2Ioxt","alt":"a body of water with a mountain in the background","small":"https://images.unsplash.com/photo-1675110972343-67d9aaaea396?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw1fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1675110972343-67d9aaaea396?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw1fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"_SsY1mfWTp4","author":"Anukrati Omar","username":"anuomar","color":"#0c2626","w":5680,"h":3787,"blur":"LmCZ^kR%RjbH.TRkadj[ElWBs.jZ","alt":"car on road","small":"https://images.unsplash.com/photo-1536877925123-b794991c9d3c?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw2fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1536877925123-b794991c9d3c?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw2fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"iCqLxIFENOw","author":"Logan Gutierrez","username":"photosoflogan","color":"#0c2640","w":5916,"h":3328,"blur":"LS9Hq%tRDhMxk@bcjYoJ8^R+%gxu","alt":"A road through mountains at dusk","small":"https://images.unsplash.com/photo-1768170575969-bac68ad93b94?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw3fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1768170575969-bac68ad93b94?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw3fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"hRneHmr6TrQ","author":"runda choo","username":"rundachoo","color":"#26260c","w":6000,"h":4000,"blur":"L25q^Tag4XN1.Kxs9IM~4=x?oNM|","alt":"A winding road travels through a forest","small":"https://images.unsplash.com/photo-1754236764077-92abce0a26a6?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw4fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1754236764077-92abce0a26a6?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw4fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"j4hvREHbsJk","author":"DD GR","username":"anandass","color":"#73738c","w":5698,"h":3799,"blur":"LRD9C,M{W;R*?wM{s.jZtSR*j]j]","alt":"Winding road through dry hills at sunset","small":"https://images.unsplash.com/photo-1777313929300-8719534128b1?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw5fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1777313929300-8719534128b1?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHw5fHxtb3VudGFpbiUyMHJvYWQlMjBkdXNrfGVufDF8MHx8fDE3OTA1Njg4MDd8MA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"GIcm0k1mxl4","author":"Lu","username":"lucaakalu","color":"#262626","w":6048,"h":4024,"blur":"L870_J,CELbbv~s9X8fl0}J-xFjF","alt":"Snowy mountain illuminated by golden sunrise light at sunrise","small":"https://images.unsplash.com/photo-1774106563684-f8a38a38f14b?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxMHx8bW91bnRhaW4lMjByb2FkJTIwZHVza3xlbnwxfDB8fHwxNzkwNTY4ODA3fDA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1774106563684-f8a38a38f14b?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxMHx8bW91bnRhaW4lMjByb2FkJTIwZHVza3xlbnwxfDB8fHwxNzkwNTY4ODA3fDA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"tzJOu2tgKSc","author":"Paul Wuthrich","username":"pwuthrich","color":"#262626","w":6000,"h":3615,"blur":"L~I#.MIURijt_NRjRjWBS6xukCWB","alt":"Empty road through dark mountains at dusk","small":"https://images.unsplash.com/photo-1761509597319-ba1ff09e83fb?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxMXx8bW91bnRhaW4lMjByb2FkJTIwZHVza3xlbnwxfDB8fHwxNzkwNTY4ODA3fDA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1761509597319-ba1ff09e83fb?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxMXx8bW91bnRhaW4lMjByb2FkJTIwZHVza3xlbnwxfDB8fHwxNzkwNTY4ODA3fDA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"},{"id":"N8AlcXhWO1g","author":"Ashwini Chaudhary(Monty)","username":"suicide_chewbacca","color":"#262626","w":6000,"h":4000,"blur":"LB7ng?IT4T-;_2NH4n-;_4M{9G%M","alt":"Two people walking along a curved road bordered by trees at low light","small":"https://images.unsplash.com/photo-1788894499317-5683aba8a95c?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxMnx8bW91bnRhaW4lMjByb2FkJTIwZHVza3xlbnwxfDB8fHwxNzkwNTY4ODA3fDA&ixlib=rb-4.1.0&w=480&h=480&q=70&fm=jpg&fit=crop","big":"https://images.unsplash.com/photo-1788894499317-5683aba8a95c?ixid=M3wxNjYyMTh8MHwxfHNlYXJjaHwxMnx8bW91bnRhaW4lMjByb2FkJTIwZHVza3xlbnwxfDB8fHwxNzkwNTY4ODA3fDA&ixlib=rb-4.1.0&w=1200&h=900&q=72&fm=jpg&fit=crop"}];</script>
+<script>
+(() => {
+  'use strict';
+  const root = document.documentElement;
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* theme ----------------------------------------------------------- */
+  const mode = document.getElementById('mode');
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)');
+  const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : prefersDark.matches;
+  const syncLabel = () => { mode.textContent = isDark() ? 'Light' : 'Dark'; };
+  mode.addEventListener('click', () => { root.dataset.theme = isDark() ? 'light' : 'dark'; syncLabel(); });
+  prefersDark.addEventListener('change', syncLabel);
+  syncLabel();
+
+  /* scroll progress -------------------------------------------------- */
+  const bar = document.getElementById('progress');
+  let ticking = false;
+  const paintBar = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (max > 0 ? Math.min(100, Math.max(0, (scrollY / max) * 100)) : 0) + '%';
+    ticking = false;
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(paintBar); } }, { passive: true });
+  addEventListener('resize', paintBar, { passive: true });
+
+  /* reveal ----------------------------------------------------------- */
+  const seenEls = new WeakSet();
+  const io = new IntersectionObserver(es => {
+    for (const e of es) {
+      if (!e.isIntersecting || seenEls.has(e.target)) continue;
+      seenEls.add(e.target); e.target.classList.add('seen');
+    }
+  }, { threshold: .15, rootMargin: '0px 0px -6% 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  /* router ----------------------------------------------------------- */
+  const pages = [...document.querySelectorAll('.page')];
+  const allNav = [...document.querySelectorAll('#nav a[href^="#/"], .sidenav a[href^="#/"]')];
+  let sections = [];
+  let railSpy = null;
+
+  function buildRail(page) {
+    if (railSpy) { railSpy.disconnect(); railSpy = null; }
+    sections = [];
+    const rail = page.querySelector('.onthispage');
+    const toc = page.querySelector('.toc');
+    if (!rail || !toc) return;
+    toc.innerHTML = '';
+    const secs = [...page.querySelectorAll('.body > section[id]')];
+    const grid = page.querySelector('.docs');
+    if (secs.length < 3) { grid.classList.add('norail'); return; }
+    grid.classList.remove('norail');
+    secs.forEach((el, i) => {
+      const li = document.createElement('li');
+      const n = document.createElement('span');
+      n.className = 'n'; n.textContent = String(i + 1).padStart(2, '0');
+      const a = document.createElement('a');
+      a.href = '#' + el.id;
+      a.textContent = (el.querySelector('h2')?.textContent || el.id).trim();
+      a.addEventListener('click', ev => {
+        ev.preventDefault();
+        el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+      });
+      li.append(n, a); toc.appendChild(li);
+      sections.push({ a, el });
+    });
+    railSpy = new IntersectionObserver(es => {
+      const vis = es.filter(e => e.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (!vis.length) return;
+      const hit = sections.find(s => s.el === vis[0].target);
+      if (hit) sections.forEach(s => s.a.setAttribute('aria-current', String(s === hit)));
+    }, { rootMargin: '-12% 0px -72% 0px' });
+    sections.forEach(s => railSpy.observe(s.el));
+  }
+
+  function route() {
+    const id = location.hash.replace('#/', '').split('#')[0] || 'home';
+    const page = document.getElementById(id) || document.getElementById('home');
+    pages.forEach(p => p.classList.toggle('hidden', p !== page));
+    allNav.forEach(a => {
+      const on = a.getAttribute('href') === '#/' + page.id;
+      on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
+    });
+    buildRail(page);
+    scrollTo({ top: 0, behavior: 'auto' });
+    paintBar();
+  }
+  addEventListener('hashchange', route);
+
+  /* command palette --------------------------------------------------- */
+  const pal = document.getElementById('pal');
+  const input = document.getElementById('palInput');
+  const list = document.getElementById('palList');
+  const openBtn = document.getElementById('openPal');
+  document.getElementById('kbd').textContent =
+    /Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K';
+
+  /* Pages come from the site nav, sections from each page's own headings,
+     so the nav, the rail and the palette cannot drift apart. */
+  const ITEMS = [{ label: 'Home', hint: 'Page', href: '#/home' }];
+  const firstNav = document.querySelector('.sidenav');
+  if (firstNav) {
+    firstNav.querySelectorAll('a[href^="#/"]').forEach(a => {
+      ITEMS.push({ label: a.textContent.trim(), hint: 'Page', href: a.getAttribute('href') });
+    });
+  }
+  pages.forEach(p => {
+    const pageName = p.querySelector('h1')?.textContent.trim() || 'Home';
+    p.querySelectorAll('.body > section[id]').forEach(sec => {
+      const h = sec.querySelector('h2');
+      if (!h) return;
+      ITEMS.push({ label: h.textContent.trim(), hint: pageName,
+                   href: '#/' + p.id, anchor: sec.id });
+    });
+  });
+
+  let rows = [], cursor = 0;
+  const select = () => rows.forEach((r, i) => r.li.setAttribute('aria-selected', String(i === cursor)));
+  const go = item => {
+    pal.hidden = true; openBtn.focus();
+    if (location.hash !== item.href) location.hash = item.href; else route();
+    if (item.anchor) {
+      requestAnimationFrame(() => document.getElementById(item.anchor)
+        ?.scrollIntoView({ behavior: 'auto', block: 'start' }));
+    }
+  };
+  const render = (q = '') => {
+    const needle = q.trim().toLowerCase();
+    const hits = ITEMS.filter(i => i.label.toLowerCase().includes(needle)
+      || i.hint.toLowerCase().includes(needle)).slice(0, 40);
+    list.innerHTML = ''; rows = []; cursor = 0;
+    hits.forEach((item, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      const b = document.createElement('b'); b.textContent = item.label;
+      const em = document.createElement('em'); em.textContent = item.hint;
+      li.append(b, em);
+      li.addEventListener('click', () => go(item));
+      li.addEventListener('mousemove', () => { cursor = i; select(); });
+      list.appendChild(li); rows.push({ li, item });
+    });
+    select();
+  };
+  const show = () => { pal.hidden = false; input.value = ''; render(); input.focus(); };
+  openBtn.addEventListener('click', show);
+  input.addEventListener('input', () => render(input.value));
+  pal.addEventListener('click', e => { if (e.target === pal) { pal.hidden = true; openBtn.focus(); } });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { pal.hidden = true; openBtn.focus(); }
+    else if (e.key === 'ArrowDown' && rows.length) { e.preventDefault(); cursor = (cursor + 1) % rows.length; select(); }
+    else if (e.key === 'ArrowUp' && rows.length) { e.preventDefault(); cursor = (cursor - 1 + rows.length) % rows.length; select(); }
+    else if (e.key === 'Enter' && rows[cursor]) { e.preventDefault(); go(rows[cursor].item); }
+  });
+  addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); pal.hidden ? show() : (pal.hidden = true); }
+    else if (e.key === '/' && pal.hidden && !/input|textarea/i.test(e.target.tagName)) { e.preventDefault(); show(); }
+  });
+
+  /* the picker, actually working -------------------------------------- */
+  const tiles = document.getElementById('tiles');
+  const selCount = document.getElementById('selCount');
+  const curateBtn = document.getElementById('curateBtn');
+  const paintCount = () => {
+    const n = tiles.querySelectorAll('.tile.sel').length;
+    selCount.textContent = n + ' selected';
+    curateBtn.disabled = n === 0;
+    curateBtn.textContent = n ? 'Curate ' + n + ' into hero' : 'Curate into hero';
+  };
+  PHOTOS.slice(0, 8).forEach(p => {
+    const t = document.createElement('button');
+    t.type = 'button'; t.className = 'tile'; t.title = 'Photo by ' + p.author;
+    t.setAttribute('aria-pressed', 'false');
+    t.innerHTML = '<span class="img" style="background-color:' + p.color +
+      ';background-image:url(' + p.small + ')"></span>' +
+      '<span class="tick"><svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>';
+    t.addEventListener('click', () => {
+      t.classList.toggle('sel');
+      t.setAttribute('aria-pressed', String(t.classList.contains('sel')));
+      paintCount();
+    });
+    tiles.appendChild(t);
+  });
+  curateBtn.addEventListener('click', () => {
+    curateBtn.textContent = tiles.querySelectorAll('.tile.sel').length +
+      ' curated · download events sent';
+    curateBtn.disabled = true;
+  });
+  const all = [...tiles.children];
+  if (calm) { all.forEach(t => t.classList.add('loaded')); }
+  else {
+    all.forEach((t, i) => setTimeout(() => t.classList.add('loaded'), 150 + i * 100));
+    setTimeout(() => {
+      all[2].classList.add('sel'); all[2].setAttribute('aria-pressed', 'true');
+      all[5].classList.add('sel'); all[5].setAttribute('aria-pressed', 'true');
+      paintCount();
+    }, 1400);
+  }
+  paintCount();
+
+  route();
+})();
+</script>
