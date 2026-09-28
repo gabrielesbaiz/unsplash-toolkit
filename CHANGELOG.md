@@ -2,6 +2,17 @@
 
 All notable changes to `unsplash-toolkit` will be documented in this file.
 
+## 2.0.4 - 2026-09-28
+
+### Fixed
+
+- `Throttle::used()` and `Throttle::availableIn()` are typed `int`, but
+  `RateLimiter` hands back whatever the cache store holds and Redis holds strings.
+  An application on the redis driver hit a `TypeError` where one on the array
+  driver saw an int. The same value also reached `RateLimitExceededException`,
+  whose `retryAfter` is typed `int`, so the throttle raised a `TypeError` instead
+  of the rate limit exception exactly when the budget ran out.
+
 ## 2.0.3 - 2026-09-28
 
 ### Fixed

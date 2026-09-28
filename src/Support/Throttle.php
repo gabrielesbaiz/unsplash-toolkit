@@ -41,7 +41,8 @@ final class Throttle
 
         for ($i = 0; $i < $requests; $i++) {
             if ($this->limiter->tooManyAttempts($key, $max)) {
-                throw RateLimitExceededException::make($this->limiter->availableIn($key));
+                // Cast for the same reason as used(): the store may hand back a string.
+                throw RateLimitExceededException::make((int) $this->limiter->availableIn($key));
             }
 
             $this->limiter->hit($key, 3600);
@@ -66,10 +67,14 @@ final class Throttle
 
     /**
      * Get the number of requests spent in the current window.
+     *
+     * RateLimiter::attempts() hands back whatever the cache store holds, and
+     * Redis holds strings: an application on the redis driver got a TypeError
+     * here where one on the array driver saw an int.
      */
     public function used(): int
     {
-        return $this->limiter->attempts($this->config->rateLimitKey());
+        return (int) $this->limiter->attempts($this->config->rateLimitKey());
     }
 
     /**
@@ -85,7 +90,7 @@ final class Throttle
      */
     public function availableIn(): int
     {
-        return $this->limiter->availableIn($this->config->rateLimitKey());
+        return (int) $this->limiter->availableIn($this->config->rateLimitKey());
     }
 
     /**

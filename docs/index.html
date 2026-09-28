@@ -308,7 +308,7 @@ footer{background:var(--wash);border-top:1px solid var(--rule);
 <header class="top">
   <div class="mx in">
     <a class="brand" href="#/home">Unsplash<i>Toolkit</i></a>
-    <span class="ver">2.0.3</span>
+    <span class="ver">2.0.4</span>
     <nav id="nav">
       <a href="#/intro">Introduction</a>
       <a href="#/install">Install</a>
@@ -1654,6 +1654,17 @@ rebuild them. <b>Nothing you curated is lost.</b></div>
       <h1>Changelog</h1>
       <p class="lede">All notable changes to <code>unsplash-toolkit</code>.</p>
       
+<section id="ch-204"><h2>2.0.4 &mdash; 2026-09-28</h2>
+<h3>Fixed</h3>
+<ul>
+<li><code>Throttle::used()</code> and <code>Throttle::availableIn()</code> are typed
+<code>int</code>, but <code>RateLimiter</code> hands back whatever the cache store holds and Redis
+holds strings. An application on the redis driver hit a <code>TypeError</code> where one on the
+array driver saw an int. The same value also reached <code>RateLimitExceededException</code>, whose
+<code>retryAfter</code> is typed <code>int</code>, so the throttle raised a <code>TypeError</code>
+instead of the rate limit exception exactly when the budget ran out.</li>
+</ul></section>
+
 <section id="ch-203"><h2>2.0.3 &mdash; 2026-09-28</h2>
 <h3>Fixed</h3>
 <p>Four defects in the 1.x upgrade migration, all found by running it against a real 1.x
