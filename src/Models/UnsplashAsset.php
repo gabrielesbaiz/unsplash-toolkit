@@ -301,8 +301,9 @@ class UnsplashAsset extends Model
     public function attribution(): Attribution
     {
         return new Attribution(
-            authorName: $this->author_name,
-            authorLink: $this->author_link,
+            // A row upgraded from v1 before its backfill may still be missing these.
+            authorName: $this->author_name ?? 'Unknown',
+            authorLink: $this->author_link ?? 'https://unsplash.com',
             appName: app(Compliance::class)->attributionName(),
         );
     }

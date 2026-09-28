@@ -2,6 +2,24 @@
 
 All notable changes to `unsplash-toolkit` will be documented in this file.
 
+## 2.0.3 - 2026-09-28
+
+### Fixed
+
+Four defects in the 1.x upgrade migration, all found by running it against a real
+1.x installation. The path is now covered by `tests/Feature/UpgradeMigrationTest.php`.
+
+- v1 stored the photographer in `author`; v2 reads `author_name`. The column was
+  never mapped, so upgraded rows credited nobody and `attribution()` fataled.
+- v1's `name` and `author` columns are `NOT NULL` and v2 writes neither, so every
+  insert after the upgrade failed. They are now made nullable.
+- The pivot's primary key was detected by looking for a column called `id`. An
+  installation that had added its own corrective key under another name got a
+  second auto-increment, which the database rejects. Any primary key now counts.
+- SQLite cannot add a primary key to an existing table, so the pivot is rebuilt
+  and its rows copied there instead.
+- `attribution()` no longer fatals on a row that has not been backfilled yet.
+
 ## 2.0.2 - 2026-09-28
 
 ### Fixed

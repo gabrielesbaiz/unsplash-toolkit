@@ -44,6 +44,7 @@ return new class extends Migration
                 'blurhash' => fn () => $table->string('blurhash', 64)->nullable(),
                 'description' => fn () => $table->text('description')->nullable(),
                 'alt_description' => fn () => $table->text('alt_description')->nullable(),
+                'author_name' => fn () => $table->string('author_name')->nullable(),
                 'author_username' => fn () => $table->string('author_username')->nullable(),
                 'last_verified_at' => fn () => $table->timestamp('last_verified_at')->nullable(),
                 'curated_at' => fn () => $table->timestamp('curated_at')->nullable(),
@@ -70,9 +71,26 @@ return new class extends Migration
                 ->update(['path' => DB::raw('name')]);
         }
 
+        // v1 called the photographer "author"; v2 reads "author_name".
+        if (Schema::hasColumn('unsplash_assets', 'author') && Schema::hasColumn('unsplash_assets', 'author_name')) {
+            DB::table('unsplash_assets')
+                ->whereNull('author_name')
+                ->update(['author_name' => DB::raw('author')]);
+        }
+
         DB::table('unsplash_assets')->whereNull('curated_at')->update([
             'curated_at' => DB::raw('created_at'),
         ]);
+
+        // v1 columns that v2 never writes are left in place so nothing is lost, but
+        // they must stop being NOT NULL or every new insert fails on them.
+        Schema::table('unsplash_assets', function (Blueprint $table): void {
+            foreach (['name', 'author'] as $legacy) {
+                if (Schema::hasColumn('unsplash_assets', $legacy)) {
+                    $table->string($legacy)->nullable()->change();
+                }
+            }
+        });
 
         $this->upgradePivotTable();
     }
@@ -102,16 +120,87 @@ return new class extends Migration
             });
         }
 
-        Schema::table('unsplashables', function (Blueprint $table): void {
-            if (! Schema::hasColumn('unsplashables', 'id')) {
-                $table->id()->first();
-            }
+        // v1 shipped the pivot with no primary key at all. Some installations added
+        // one under their own name, so look for any primary key rather than a column
+        // called "id" — adding a second auto-increment fails.
+        if (! $this->hasPrimaryKey('unsplashables')) {
+            $this->addPivotPrimaryKey();
+        }
 
+        Schema::table('unsplashables', function (Blueprint $table): void {
             if (! Schema::hasColumn('unsplashables', 'created_at')) {
                 $table->timestamps();
             }
 
-            $table->index(['unsplashable_id', 'unsplashable_type'], 'unsplashables_morph_index');
+            if (! $this->hasIndex('unsplashables', 'unsplashables_morph_index')) {
+                $table->index(['unsplashable_id', 'unsplashable_type'], 'unsplashables_morph_index');
+            }
         });
+    }
+
+    /**
+     * Give the pivot table a primary key.
+     *
+     * SQLite cannot add one to an existing table, so there the table is rebuilt
+     * and its rows copied across.
+     */
+    private function addPivotPrimaryKey(): void
+    {
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            Schema::table('unsplashables', function (Blueprint $table): void {
+                $table->id()->first();
+            });
+
+            return;
+        }
+
+        $rows = DB::table('unsplashables')->get()->map(fn ($row): array => (array) $row);
+
+        Schema::drop('unsplashables');
+
+        Schema::create('unsplashables', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('unsplash_asset_id')->index();
+            $table->morphs('unsplashable');
+            $table->timestamps();
+        });
+
+        foreach ($rows->chunk(100) as $chunk) {
+            DB::table('unsplashables')->insert($chunk->map(fn (array $row): array => [
+                'unsplash_asset_id' => $row['unsplash_asset_id'] ?? null,
+                'unsplashable_id' => $row['unsplashable_id'] ?? $row['unsplashables_id'] ?? null,
+                'unsplashable_type' => $row['unsplashable_type'] ?? $row['unsplashables_type'] ?? null,
+                'created_at' => $row['created_at'] ?? null,
+                'updated_at' => $row['updated_at'] ?? null,
+            ])->all());
+        }
+    }
+
+    /**
+     * Determine if the given table already has a primary key.
+     */
+    private function hasPrimaryKey(string $table): bool
+    {
+        foreach (Schema::getIndexes($table) as $index) {
+            if ($index['primary'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if the given table already carries the named index.
+     */
+    private function hasIndex(string $table, string $name): bool
+    {
+        foreach (Schema::getIndexes($table) as $index) {
+            if (($index['name'] ?? null) === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 };

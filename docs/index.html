@@ -308,7 +308,7 @@ footer{background:var(--wash);border-top:1px solid var(--rule);
 <header class="top">
   <div class="mx in">
     <a class="brand" href="#/home">Unsplash<i>Toolkit</i></a>
-    <span class="ver">2.0.2</span>
+    <span class="ver">2.0.3</span>
     <nav id="nav">
       <a href="#/intro">Introduction</a>
       <a href="#/install">Install</a>
@@ -1654,6 +1654,23 @@ rebuild them. <b>Nothing you curated is lost.</b></div>
       <h1>Changelog</h1>
       <p class="lede">All notable changes to <code>unsplash-toolkit</code>.</p>
       
+<section id="ch-203"><h2>2.0.3 &mdash; 2026-09-28</h2>
+<h3>Fixed</h3>
+<p>Four defects in the 1.x upgrade migration, all found by running it against a real 1.x
+installation. The path is now covered by <code>tests/Feature/UpgradeMigrationTest.php</code>.</p>
+<ul>
+<li>v1 stored the photographer in <code>author</code>; v2 reads <code>author_name</code>. The column
+was never mapped, so upgraded rows credited nobody and <code>attribution()</code> fataled.</li>
+<li>v1's <code>name</code> and <code>author</code> columns are <code>NOT NULL</code> and v2 writes
+neither, so every insert after the upgrade failed. They are now made nullable.</li>
+<li>The pivot's primary key was detected by looking for a column called <code>id</code>. An
+installation that had added its own corrective key under another name got a second auto-increment,
+which the database rejects. Any primary key now counts.</li>
+<li>SQLite cannot add a primary key to an existing table, so the pivot is rebuilt and its rows
+copied there instead.</li>
+<li><code>attribution()</code> no longer fatals on a row that has not been backfilled yet.</li>
+</ul></section>
+
 <section id="ch-202"><h2>2.0.2 &mdash; 2026-09-28</h2>
 <h3>Fixed</h3>
 <ul>
