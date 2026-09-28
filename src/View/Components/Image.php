@@ -118,6 +118,9 @@ class Image extends Component
      */
     public function render(): View
     {
-        return view('unsplash::components.image');
+        /** @var view-string $view */
+        $view = 'unsplash::components.image';
+
+        return view($view);
     }
 }

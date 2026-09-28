@@ -38,6 +38,9 @@ class Attribution extends Component
      */
     public function render(): View
     {
-        return view('unsplash::components.attribution');
+        /** @var view-string $view */
+        $view = 'unsplash::components.attribution';
+
+        return view($view);
     }
 }

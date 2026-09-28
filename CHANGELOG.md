@@ -2,6 +2,18 @@
 
 All notable changes to `unsplash-toolkit` will be documented in this file.
 
+## 2.0.1 - 2026-09-28
+
+### Fixed
+
+- Declared Laravel 11 as the minimum. `UnsplashAsset` defines its casts through the
+  `casts()` method, which Laravel 10 does not call, so on Laravel 10 the enum, array
+  and date casts were silently ignored. Laravel 10 reached end of life in February 2026.
+- Annotated the Blade components' view names as `view-string`, so PHPStan passes on a
+  clean dependency resolution.
+- Removed the Laravel 10 jobs from the test matrix: `pestphp/pest-plugin-laravel ^3`
+  requires Laravel 11, so those jobs could never resolve.
+
 ## 2.0.0 - 2026-09-28
 
 A rewrite. See [UPGRADE.md](UPGRADE.md) for the migration path.

@@ -57,7 +57,7 @@ bytes you control forever, buy a stock licence and use
 ## Requirements
 
 - PHP 8.2, 8.3 or 8.4
-- Laravel 10, 11 or 12
+- Laravel 11 or 12
 - An [Unsplash API access key](https://unsplash.com/developers)
 
 ## Installation
@@ -117,7 +117,7 @@ composer analyse     # PHPStan, level 6
 composer format      # Pint
 ```
 
-GitHub Actions runs all three across PHP 8.2–8.4 and Laravel 10–12 on every push.
+GitHub Actions runs all three across PHP 8.2–8.4 and Laravel 11–12 on every push.
 `tests/Compliance` holds one file per guideline — it is what keeps the rules from
 rotting, so a change that weakens it needs a test rather than a merge.
 
