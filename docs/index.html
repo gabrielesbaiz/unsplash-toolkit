@@ -308,7 +308,7 @@ footer{background:var(--wash);border-top:1px solid var(--rule);
 <header class="top">
   <div class="mx in">
     <a class="brand" href="#/home">Unsplash<i>Toolkit</i></a>
-    <span class="ver">2.0.1</span>
+    <span class="ver">2.0.2</span>
     <nav id="nav">
       <a href="#/intro">Introduction</a>
       <a href="#/install">Install</a>
@@ -1654,6 +1654,17 @@ rebuild them. <b>Nothing you curated is lost.</b></div>
       <h1>Changelog</h1>
       <p class="lede">All notable changes to <code>unsplash-toolkit</code>.</p>
       
+<section id="ch-202"><h2>2.0.2 &mdash; 2026-09-28</h2>
+<h3>Fixed</h3>
+<ul>
+<li>Declared the HTTP dependencies the package actually uses. It builds on
+<code>Illuminate\Http\Client</code> but required only <code>illuminate/contracts</code>, so on a
+lowest-version resolution <code>guzzlehttp/promises</code> 1.x was installed, whose untyped
+<code>wait()</code> is incompatible with Laravel 12's <code>LazyPromise</code> and fataled on any
+<code>Http::pool()</code> call. <code>guzzlehttp/guzzle</code>, <code>illuminate/http</code> and
+<code>illuminate/support</code> are now required explicitly.</li>
+</ul></section>
+
 <section id="ch-201"><h2>2.0.1 &mdash; 2026-09-28</h2>
 <h3>Fixed</h3>
 <ul>

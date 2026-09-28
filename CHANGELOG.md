@@ -2,6 +2,17 @@
 
 All notable changes to `unsplash-toolkit` will be documented in this file.
 
+## 2.0.2 - 2026-09-28
+
+### Fixed
+
+- Declared the HTTP dependencies the package actually uses. It builds on
+  `Illuminate\Http\Client` but required only `illuminate/contracts`, so on a
+  lowest-version resolution `guzzlehttp/promises` 1.x was installed, whose untyped
+  `wait()` is incompatible with Laravel 12's `LazyPromise` and fataled on any
+  `Http::pool()` call. `guzzlehttp/guzzle`, `illuminate/http` and `illuminate/support`
+  are now required explicitly.
+
 ## 2.0.1 - 2026-09-28
 
 ### Fixed
